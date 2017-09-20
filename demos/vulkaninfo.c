@@ -32,6 +32,7 @@
 
 #include <assert.h>
 #include <inttypes.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -628,6 +629,100 @@ static void AppGetInstanceExtensions(struct AppInstance *inst) {
     AppGetGlobalLayerExtensions(NULL, &inst->global_extension_count, &inst->global_extensions);
 }
 
+void printHtmlHeader(FILE * out) {
+    fprintf(out, "<!doctype html>\n");
+    fprintf(out, "<html>\n");
+    fprintf(out, "    <head>\n");
+    fprintf(out, "        <title>Vulkan API Dump</title>\n");
+    fprintf(out, "        <style type='text/css'>\n");
+    fprintf(out, "         html {\n");
+    fprintf(out, "            background-color: #0b1e48;\n");
+    fprintf(out, "            background-image: url(\"https://vulkan.lunarg.com/img/bg-starfield.jpg\");\n");
+    fprintf(out, "            background-position: center;\n");
+    fprintf(out, "            -webkit-background-size: cover;\n");
+    fprintf(out, "            -moz-background-size: cover;\n");
+    fprintf(out, "            -o-background-size: cover;\n");
+    fprintf(out, "            background-size: cover;\n");
+    fprintf(out, "            background-attachment: fixed;\n");
+    fprintf(out, "            background-repeat: no-repeat;\n");
+    fprintf(out, "            height: 100%%;\n");
+    fprintf(out, "        }\n");
+    fprintf(out, "        #header {\n");
+    fprintf(out, "            z-index: -1;\n");
+    fprintf(out, "        }\n");
+    fprintf(out, "        #header>img {\n");
+    fprintf(out, "            position: absolute;\n");
+    fprintf(out, "            width: 160px;\n");
+    fprintf(out, "            margin-left: -280px;\n");
+    fprintf(out, "            top: -10px;\n");
+    fprintf(out, "            left: 50%%;\n");
+    fprintf(out, "        }\n");
+    fprintf(out, "        #header>h1 {\n");
+    fprintf(out, "            font-family: Arial, \"Helvetica Neue\", Helvetica, sans-serif;\n");
+    fprintf(out, "            font-size: 44px;\n");
+    fprintf(out, "            font-weight: 200;\n");
+    fprintf(out, "            text-shadow: 4px 4px 5px #000;\n");
+    fprintf(out, "            color: #eee;\n");
+    fprintf(out, "            position: absolute;\n");
+    fprintf(out, "            width: 400px;\n");
+    fprintf(out, "            margin-left: -80px;\n");
+    fprintf(out, "            top: 8px;\n");
+    fprintf(out, "            left: 50%%;\n");
+    fprintf(out, "        }\n");
+    fprintf(out, "        body {\n");
+    fprintf(out, "            font-family: Consolas, monaco, monospace;\n");
+    fprintf(out, "            font-size: 14px;\n");
+    fprintf(out, "            line-height: 20px;\n");
+    fprintf(out, "            color: #eee;\n");
+    fprintf(out, "            height: 100%%;\n");
+    fprintf(out, "            margin: 0;\n");
+    fprintf(out, "            overflow: hidden;\n");
+    fprintf(out, "        }\n");
+    fprintf(out, "        #wrapper {\n");
+    fprintf(out, "            background-color: rgba(0, 0, 0, 0.7);\n");
+    fprintf(out, "            border: 1px solid #446;\n");
+    fprintf(out, "            box-shadow: 0px 0px 10px #000;\n");
+    fprintf(out, "            padding: 8px 12px;\n\n");
+    fprintf(out, "            display: inline-block;\n");
+    fprintf(out, "            position: absolute;\n");
+    fprintf(out, "            top: 80px;\n");
+    fprintf(out, "            bottom: 25px;\n");
+    fprintf(out, "            left: 50px;\n");
+    fprintf(out, "            right: 50px;\n");
+    fprintf(out, "            overflow: auto;\n");
+    fprintf(out, "        }\n");
+    fprintf(out, "        details>details {\n");
+    fprintf(out, "            margin-left: 22px;\n");
+    fprintf(out, "        }\n");
+    fprintf(out, "        details>summary:only-child::-webkit-details-marker {\n");
+    fprintf(out, "            display: none;\n");
+    fprintf(out, "        }\n");
+    fprintf(out, "        .var, .type, .val {\n");
+    fprintf(out, "            display: inline;\n");
+    fprintf(out, "        }\n");
+    fprintf(out, "        .var {\n");
+    fprintf(out, "        }\n");
+    fprintf(out, "        .type {\n");
+    fprintf(out, "            color: #acf;\n");
+    fprintf(out, "            margin: 0 12px;\n");
+    fprintf(out, "        }\n");
+    fprintf(out, "        .val {\n");
+    fprintf(out, "            color: #afa;\n");
+    fprintf(out, "            background: #222;\n");
+    fprintf(out, "            text-align: right;\n");
+    fprintf(out, "        }\n");
+    fprintf(out, "        </style>\n");
+    fprintf(out, "    </head>\n");
+    fprintf(out, "    <body>\n");
+    fprintf(out, "        <div id='header'>\n");
+    fprintf(out, "            <img src='C:/Git/VulkanTools/layersvt/images/lunarg.png' />\n");
+    fprintf(out, "            <h1>VULKAN INFO</h1>\n");
+    fprintf(out, "        </div>\n");
+    fprintf(out, "        <div id='wrapper'>\n");
+    fprintf(out, "            <details><summary>");
+}
+
+//static void AppCreateInstance(struct AppInstance *inst, int argc, ...) {
 static void AppCreateInstance(struct AppInstance *inst) {
     AppGetInstanceExtensions(inst);
 
@@ -1641,6 +1736,8 @@ int main(int argc, char **argv) {
     uint32_t gpu_count;
     VkResult err;
     struct AppInstance inst;
+    bool html_output = false;
+    FILE *out = stdout;
 
 #ifdef _WIN32
     if (ConsoleIsExclusive()) ConsoleEnlarge();
@@ -1649,12 +1746,31 @@ int main(int argc, char **argv) {
     vulkan_major = VK_VERSION_MAJOR(VK_API_VERSION_1_0);
     vulkan_minor = VK_VERSION_MINOR(VK_API_VERSION_1_0);
     vulkan_patch = VK_VERSION_PATCH(VK_HEADER_VERSION);
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--html") == 0) {
+            // TODO: Check if file exists, if so do something
+            out = fopen("output.txt", "w");
+            // TODO: File error checking
+            html_output = true;
+            continue;
+        }
+    }
 
-    printf("===========\n");
-    printf("VULKAN INFO\n");
-    printf("===========\n\n");
-    printf("Vulkan API Version: %d.%d.%d\n\n", vulkan_major, vulkan_minor, vulkan_patch);
+    if (html_output) {
+        printHtmlHeader(out);
+    } else {
+        printf("===========\n");
+        printf("VULKAN INFO\n");
+        printf("===========\n\n");
+    }
+    fprintf(out, "Vulkan API Version: %d.%d.%d", vulkan_major, vulkan_minor, vulkan_patch);
+    if (html_output) {
+        fprintf(out, "</summary>\n            ");
+    } else {
+        printf("\n\n");
+    }
 
+//    AppCreateInstance(&inst, argc + 2, out, html_output, argv);
     AppCreateInstance(&inst);
 
     printf("\nInstance Extensions:\n");
@@ -1785,6 +1901,10 @@ int main(int argc, char **argv) {
 #ifdef _WIN32
     if (ConsoleIsExclusive()) Sleep(INFINITE);
 #endif
+
+    if (html_output) {
+        fclose(out);
+    }
 
     return 0;
 }
