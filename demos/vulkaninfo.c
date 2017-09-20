@@ -716,7 +716,7 @@ void printHtmlHeader(FILE *out) {
     fprintf(out, "    <body>\n");
     fprintf(out, "        <div id='header'>\n");
     fprintf(out, "            <img src='C:/Git/VulkanTools/layersvt/images/lunarg.png' />\n");
-    fprintf(out, "            <h1>VULKAN INFO</h1>\n");
+    fprintf(out, "            <h1>Vulkan Info</h1>\n");
     fprintf(out, "        </div>\n");
     fprintf(out, "        <div id='wrapper'>\n");
     fprintf(out, "            <details><summary>");
@@ -1573,21 +1573,45 @@ static void AppGpuDumpProps(const struct AppGpu *gpu)
 // clang-format on
 
 static void AppDumpExtensions(const char *indent, const char *layer_name, const uint32_t extension_count,
-                              const VkExtensionProperties *extension_properties) {
+                              const VkExtensionProperties *extension_properties, FILE *out, const bool *html_output) {
     uint32_t i;
-    if (layer_name && (strlen(layer_name) > 0)) {
-        printf("%s%s Extensions", indent, layer_name);
-    } else {
-        printf("%sExtensions", indent);
+
+    if (*html_output) {
+        fprintf(out, "            <details><summary>");
     }
-    printf("\tcount = %d\n", extension_count);
+
+    if (layer_name && (strlen(layer_name) > 0)) {
+        fprintf(out, "%s%s Extensions", indent, layer_name);
+    } else {
+        fprintf(out, "%sExtensions", indent);
+    }
+    if (*html_output) {
+        fprintf(out, "\tcount = <div class='val'>%d</div></summary>\n", extension_count);
+    } else {
+        fprintf(out, "\tcount = %d\n", extension_count);
+    }
+
     for (i = 0; i < extension_count; i++) {
         VkExtensionProperties const *ext_prop = &extension_properties[i];
 
-        printf("%s\t", indent);
-        printf("%-36s: extension revision %2d\n", ext_prop->extensionName, ext_prop->specVersion);
+        if (*html_output) {
+            fprintf(out, "               <details><summary>");
+        } else {
+            fprintf(out, "%s\t", indent);
+        }
+        if (*html_output) {
+            fprintf(out, "<div class = 'type'>%-36s</div>: extension revision <div class ='val'>%d</summary></details>\n",
+                    ext_prop->extensionName, ext_prop->specVersion);
+        } else {
+            fprintf(out, "%-36s: extension revision %2d\n", ext_prop->extensionName, ext_prop->specVersion);
+        }
     }
-    fflush(stdout);
+    if (*html_output) {
+        fprintf(out, "            </details>\n");
+    }
+
+    //fflush(stdout);
+    fflush(out);
 }
 
 static void AppGpuDumpQueueProps(const struct AppGpu *gpu, uint32_t id) {
@@ -1683,7 +1707,7 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu) {
     fflush(stdout);
 }
 
-static void AppGpuDump(const struct AppGpu *gpu) {
+static void AppGpuDump(const struct AppGpu *gpu, FILE *out, const bool html_output) {
     uint32_t i;
 
     printf("\nDevice Properties and Extensions :\n");
@@ -1691,7 +1715,7 @@ static void AppGpuDump(const struct AppGpu *gpu) {
     printf("GPU%u\n", gpu->id);
     AppGpuDumpProps(gpu);
     printf("\n");
-    AppDumpExtensions("", "Device", gpu->device_extension_count, gpu->device_extensions);
+    AppDumpExtensions("", "Device", gpu->device_extension_count, gpu->device_extensions, out, &html_output);
     printf("\n");
     for (i = 0; i < gpu->queue_count; i++) {
         AppGpuDumpQueueProps(gpu, i);
@@ -1749,7 +1773,7 @@ int main(int argc, char **argv) {
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--html") == 0) {
             // TODO: Check if file exists, if so do something
-            out = fopen("output.txt", "w");
+            out = fopen("output.html", "w");
             // TODO: File error checking
             html_output = true;
             continue;
@@ -1763,19 +1787,21 @@ int main(int argc, char **argv) {
         printf("VULKAN INFO\n");
         printf("===========\n\n");
     }
-    fprintf(out, "Vulkan API Version: %d.%d.%d", vulkan_major, vulkan_minor, vulkan_patch);
+    fprintf(out, "Vulkan API Version: ");
     if (html_output) {
-        fprintf(out, "</summary>\n            ");
+        fprintf(out, "<div class='val'>%d.%d.%d</div></summary>\n            </details>\n", vulkan_major, vulkan_minor,
+                vulkan_patch);
     } else {
-        printf("\n\n");
+        printf("%d.%d.%d\n\n", vulkan_major, vulkan_minor, vulkan_patch);
     }
 
     //    AppCreateInstance(&inst, argc + 2, out, html_output, argv);
     AppCreateInstance(&inst);
-
-    printf("\nInstance Extensions:\n");
-    printf("====================\n");
-    AppDumpExtensions("", "Instance", inst.global_extension_count, inst.global_extensions);
+    if (!html_output) {
+        printf("\nInstance Extensions:\n");
+        printf("====================\n");
+    }
+    AppDumpExtensions("", "Instance", inst.global_extension_count, inst.global_extensions, out, &html_output);
 
     err = vkEnumeratePhysicalDevices(inst.instance, &gpu_count, NULL);
     if (err) ERR_EXIT(err);
@@ -1794,6 +1820,7 @@ int main(int argc, char **argv) {
     //---Layer-Device-Extensions---
     printf("Layers: count = %d\n", inst.global_layer_count);
     printf("=======\n");
+
     for (uint32_t i = 0; i < inst.global_layer_count; i++) {
         uint32_t layer_major, layer_minor, layer_patch;
         char spec_version[64], layer_version[64];
@@ -1805,7 +1832,7 @@ int main(int argc, char **argv) {
         printf("%s (%s) Vulkan version %s, layer version %s\n", layer_prop->layerName, (char *)layer_prop->description,
                spec_version, layer_version);
 
-        AppDumpExtensions("\t", "Layer", inst.global_layers[i].extension_count, inst.global_layers[i].extension_properties);
+        AppDumpExtensions("\t", "Layer", inst.global_layers[i].extension_count, inst.global_layers[i].extension_properties, out, &html_output);
 
         char *layer_name = inst.global_layers[i].layer_properties.layerName;
         printf("\tDevices \tcount = %d\n", gpu_count);
@@ -1814,7 +1841,7 @@ int main(int argc, char **argv) {
             uint32_t count = 0;
             VkExtensionProperties *props;
             AppGetPhysicalDeviceLayerExtensions(&gpus[j], layer_name, &count, &props);
-            AppDumpExtensions("\t\t", "Layer-Device", count, props);
+            AppDumpExtensions("\t\t", "Layer-Device", count, props, out, &html_output);
             free(props);
         }
         printf("\n");
@@ -1887,7 +1914,7 @@ int main(int argc, char **argv) {
     //---------
 
     for (uint32_t i = 0; i < gpu_count; i++) {
-        AppGpuDump(&gpus[i]);
+        AppGpuDump(&gpus[i], out, &html_output);
         printf("\n\n");
     }
 
