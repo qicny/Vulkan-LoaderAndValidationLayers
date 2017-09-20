@@ -58,7 +58,7 @@
 #ifdef _WIN32
 
 #define snprintf _snprintf
-#define strdup   _strdup
+#define strdup _strdup
 
 // Returns nonzero if the console is used only for this process. Will return
 // zero if another process (such as cmd.exe) is also attached.
@@ -629,7 +629,7 @@ static void AppGetInstanceExtensions(struct AppInstance *inst) {
     AppGetGlobalLayerExtensions(NULL, &inst->global_extension_count, &inst->global_extensions);
 }
 
-void printHtmlHeader(FILE * out) {
+void printHtmlHeader(FILE *out) {
     fprintf(out, "<!doctype html>\n");
     fprintf(out, "<html>\n");
     fprintf(out, "    <head>\n");
@@ -722,11 +722,11 @@ void printHtmlHeader(FILE * out) {
     fprintf(out, "            <details><summary>");
 }
 
-//static void AppCreateInstance(struct AppInstance *inst, int argc, ...) {
+// static void AppCreateInstance(struct AppInstance *inst, int argc, ...) {
 static void AppCreateInstance(struct AppInstance *inst) {
     AppGetInstanceExtensions(inst);
 
-//---Build a list of extensions to load---
+    //---Build a list of extensions to load---
 
     const char *info_instance_extensions[] = {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
                                               VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME,
@@ -827,7 +827,7 @@ static void AppDestroyInstance(struct AppInstance *inst) {
         free(inst->global_layers[i].extension_properties);
     }
     free(inst->global_layers);
-    free((char**)inst->inst_extensions);
+    free((char **)inst->inst_extensions);
     vkDestroyInstance(inst->instance, NULL);
 }
 
@@ -1770,7 +1770,7 @@ int main(int argc, char **argv) {
         printf("\n\n");
     }
 
-//    AppCreateInstance(&inst, argc + 2, out, html_output, argv);
+    //    AppCreateInstance(&inst, argc + 2, out, html_output, argv);
     AppCreateInstance(&inst);
 
     printf("\nInstance Extensions:\n");
