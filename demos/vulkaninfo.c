@@ -1576,10 +1576,7 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
                               const VkExtensionProperties *extension_properties, FILE *out, const bool *html_output) {
     uint32_t i;
 
-    if (*html_output) {
-        fprintf(out, "            <details><summary>");
-    }
-
+    if (*html_output) fprintf(out, "            <details><summary>");
     if (layer_name && (strlen(layer_name) > 0)) {
         fprintf(out, "%s%s Extensions", indent, layer_name);
     } else {
@@ -1595,22 +1592,17 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
         VkExtensionProperties const *ext_prop = &extension_properties[i];
 
         if (*html_output) {
-            fprintf(out, "               <details><summary>");
+            fprintf(out, "                <details><summary>");
+            fprintf(out, "<div class='type'>%-36s</div>: extension revision <div class='val'>%d", ext_prop->extensionName,
+                    ext_prop->specVersion);
+            fprintf(out, "</summary></details>\n");
         } else {
             fprintf(out, "%s\t", indent);
-        }
-        if (*html_output) {
-            fprintf(out, "<div class = 'type'>%-36s</div>: extension revision <div class ='val'>%d</summary></details>\n",
-                    ext_prop->extensionName, ext_prop->specVersion);
-        } else {
             fprintf(out, "%-36s: extension revision %2d\n", ext_prop->extensionName, ext_prop->specVersion);
         }
     }
-    if (*html_output) {
-        fprintf(out, "            </details>\n");
-    }
+    if (*html_output) fprintf(out, "            </details>\n");
 
-    //fflush(stdout);
     fflush(out);
 }
 
@@ -1789,8 +1781,8 @@ int main(int argc, char **argv) {
     }
     fprintf(out, "Vulkan API Version: ");
     if (html_output) {
-        fprintf(out, "<div class='val'>%d.%d.%d</div></summary>\n            </details>\n", vulkan_major, vulkan_minor,
-                vulkan_patch);
+        fprintf(out, "<div class='val'>%d.%d.%d</div></summary>\n", vulkan_major, vulkan_minor, vulkan_patch);
+        fprintf(out, "            </details>\n            <br />\n");
     } else {
         printf("%d.%d.%d\n\n", vulkan_major, vulkan_minor, vulkan_patch);
     }
@@ -1814,12 +1806,17 @@ int main(int argc, char **argv) {
     if (!gpus) ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
     for (uint32_t i = 0; i < gpu_count; i++) {
         AppGpuInit(&gpus[i], &inst, i, objs[i]);
-        printf("\n\n");
+        if (!html_output) fprintf(out, "\n\n");
     }
 
     //---Layer-Device-Extensions---
-    printf("Layers: count = %d\n", inst.global_layer_count);
-    printf("=======\n");
+    if (html_output) {
+        fprintf(out, "            <details><summary>Layers: count = <div class='val'>%d</div></summary>\n",
+                inst.global_layer_count);
+    } else {
+        printf("Layers: count = %d\n", inst.global_layer_count);
+        printf("=======\n");
+    }
 
     for (uint32_t i = 0; i < inst.global_layer_count; i++) {
         uint32_t layer_major, layer_minor, layer_patch;
@@ -1829,10 +1826,20 @@ int main(int argc, char **argv) {
         ExtractVersion(layer_prop->specVersion, &layer_major, &layer_minor, &layer_patch);
         snprintf(spec_version, sizeof(spec_version), "%d.%d.%d", layer_major, layer_minor, layer_patch);
         snprintf(layer_version, sizeof(layer_version), "%d", layer_prop->implementationVersion);
-        printf("%s (%s) Vulkan version %s, layer version %s\n", layer_prop->layerName, (char *)layer_prop->description,
-               spec_version, layer_version);
 
-        AppDumpExtensions("\t", "Layer", inst.global_layers[i].extension_count, inst.global_layers[i].extension_properties, out, &html_output);
+        if (html_output) {
+            fprintf(out, "               <details><summary>");
+            fprintf(out, "<div class='type'>%s</div> (%s) Vulkan version <div class='val'>%s</div>, ", layer_prop->layerName,
+                    (char *)layer_prop->description, spec_version);
+            fprintf(out, "layer version <div class='val'>%s</div></summary>\n", layer_version);
+        } else {
+            printf("%s (%s) Vulkan version %s, layer version %s\n", layer_prop->layerName,
+                   (char *) layer_prop->description,
+                   spec_version, layer_version);
+        }
+
+        AppDumpExtensions("\t", "Layer", inst.global_layers[i].extension_count, inst.global_layers[i].extension_properties, out,
+                          &html_output);
 
         char *layer_name = inst.global_layers[i].layer_properties.layerName;
         printf("\tDevices \tcount = %d\n", gpu_count);
@@ -1844,9 +1851,15 @@ int main(int argc, char **argv) {
             AppDumpExtensions("\t\t", "Layer-Device", count, props, out, &html_output);
             free(props);
         }
-        printf("\n");
+
+        if (html_output) {
+            fprintf(out, "            </details>\n");
+        } else {
+            printf("\n");
+        }
     }
-    fflush(stdout);
+//    fflush(stdout);
+    fflush(out);
     //-----------------------------
 
     printf("Presentable Surfaces:\n");
