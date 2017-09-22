@@ -632,94 +632,100 @@ static void AppGetInstanceExtensions(struct AppInstance *inst) {
 void printHtmlHeader(FILE *out) {
     fprintf(out, "<!doctype html>\n");
     fprintf(out, "<html>\n");
-    fprintf(out, "    <head>\n");
-    fprintf(out, "        <title>Vulkan API Dump</title>\n");
-    fprintf(out, "        <style type='text/css'>\n");
-    fprintf(out, "         html {\n");
-    fprintf(out, "            background-color: #0b1e48;\n");
-    fprintf(out, "            background-image: url(\"https://vulkan.lunarg.com/img/bg-starfield.jpg\");\n");
-    fprintf(out, "            background-position: center;\n");
-    fprintf(out, "            -webkit-background-size: cover;\n");
-    fprintf(out, "            -moz-background-size: cover;\n");
-    fprintf(out, "            -o-background-size: cover;\n");
-    fprintf(out, "            background-size: cover;\n");
-    fprintf(out, "            background-attachment: fixed;\n");
-    fprintf(out, "            background-repeat: no-repeat;\n");
-    fprintf(out, "            height: 100%%;\n");
-    fprintf(out, "        }\n");
-    fprintf(out, "        #header {\n");
-    fprintf(out, "            z-index: -1;\n");
-    fprintf(out, "        }\n");
-    fprintf(out, "        #header>img {\n");
-    fprintf(out, "            position: absolute;\n");
-    fprintf(out, "            width: 160px;\n");
-    fprintf(out, "            margin-left: -280px;\n");
-    fprintf(out, "            top: -10px;\n");
-    fprintf(out, "            left: 50%%;\n");
-    fprintf(out, "        }\n");
-    fprintf(out, "        #header>h1 {\n");
-    fprintf(out, "            font-family: Arial, \"Helvetica Neue\", Helvetica, sans-serif;\n");
-    fprintf(out, "            font-size: 44px;\n");
-    fprintf(out, "            font-weight: 200;\n");
-    fprintf(out, "            text-shadow: 4px 4px 5px #000;\n");
-    fprintf(out, "            color: #eee;\n");
-    fprintf(out, "            position: absolute;\n");
-    fprintf(out, "            width: 400px;\n");
-    fprintf(out, "            margin-left: -80px;\n");
-    fprintf(out, "            top: 8px;\n");
-    fprintf(out, "            left: 50%%;\n");
-    fprintf(out, "        }\n");
-    fprintf(out, "        body {\n");
-    fprintf(out, "            font-family: Consolas, monaco, monospace;\n");
-    fprintf(out, "            font-size: 14px;\n");
-    fprintf(out, "            line-height: 20px;\n");
-    fprintf(out, "            color: #eee;\n");
-    fprintf(out, "            height: 100%%;\n");
-    fprintf(out, "            margin: 0;\n");
-    fprintf(out, "            overflow: hidden;\n");
-    fprintf(out, "        }\n");
-    fprintf(out, "        #wrapper {\n");
-    fprintf(out, "            background-color: rgba(0, 0, 0, 0.7);\n");
-    fprintf(out, "            border: 1px solid #446;\n");
-    fprintf(out, "            box-shadow: 0px 0px 10px #000;\n");
-    fprintf(out, "            padding: 8px 12px;\n\n");
-    fprintf(out, "            display: inline-block;\n");
-    fprintf(out, "            position: absolute;\n");
-    fprintf(out, "            top: 80px;\n");
-    fprintf(out, "            bottom: 25px;\n");
-    fprintf(out, "            left: 50px;\n");
-    fprintf(out, "            right: 50px;\n");
-    fprintf(out, "            overflow: auto;\n");
-    fprintf(out, "        }\n");
-    fprintf(out, "        details>details {\n");
-    fprintf(out, "            margin-left: 22px;\n");
-    fprintf(out, "        }\n");
-    fprintf(out, "        details>summary:only-child::-webkit-details-marker {\n");
-    fprintf(out, "            display: none;\n");
-    fprintf(out, "        }\n");
-    fprintf(out, "        .var, .type, .val {\n");
-    fprintf(out, "            display: inline;\n");
-    fprintf(out, "        }\n");
-    fprintf(out, "        .var {\n");
-    fprintf(out, "        }\n");
-    fprintf(out, "        .type {\n");
-    fprintf(out, "            color: #acf;\n");
-    fprintf(out, "            margin: 0 12px;\n");
-    fprintf(out, "        }\n");
-    fprintf(out, "        .val {\n");
-    fprintf(out, "            color: #afa;\n");
-    fprintf(out, "            background: #222;\n");
-    fprintf(out, "            text-align: right;\n");
-    fprintf(out, "        }\n");
-    fprintf(out, "        </style>\n");
-    fprintf(out, "    </head>\n");
-    fprintf(out, "    <body>\n");
-    fprintf(out, "        <div id='header'>\n");
-    fprintf(out, "            <img src='C:/Git/VulkanTools/layersvt/images/lunarg.png' />\n");
-    fprintf(out, "            <h1>Vulkan Info</h1>\n");
-    fprintf(out, "        </div>\n");
-    fprintf(out, "        <div id='wrapper'>\n");
-    fprintf(out, "            <details><summary>");
+    fprintf(out, "\t<head>\n");
+    fprintf(out, "\t\t<title>Vulkan API Dump</title>\n");
+    fprintf(out, "\t\t<style type='text/css'>\n");
+    fprintf(out, "\t\thtml {\n");
+    fprintf(out, "\t\t\tbackground-color: #0b1e48;\n");
+    fprintf(out, "\t\t\tbackground-image: url(\"https://vulkan.lunarg.com/img/bg-starfield.jpg\");\n");
+    fprintf(out, "\t\t\tbackground-position: center;\n");
+    fprintf(out, "\t\t\t-webkit-background-size: cover;\n");
+    fprintf(out, "\t\t\t-moz-background-size: cover;\n");
+    fprintf(out, "\t\t\t-o-background-size: cover;\n");
+    fprintf(out, "\t\t\tbackground-size: cover;\n");
+    fprintf(out, "\t\t\tbackground-attachment: fixed;\n");
+    fprintf(out, "\t\t\tbackground-repeat: no-repeat;\n");
+    fprintf(out, "\t\t\theight: 100%%;\n");
+    fprintf(out, "\t\t}\n");
+    fprintf(out, "\t\t#header {\n");
+    fprintf(out, "\t\t\tz-index: -1;\n");
+    fprintf(out, "\t\t}\n");
+    fprintf(out, "\t\t#header>img {\n");
+    fprintf(out, "\t\t\tposition: absolute;\n");
+    fprintf(out, "\t\t\twidth: 160px;\n");
+    fprintf(out, "\t\t\tmargin-left: -280px;\n");
+    fprintf(out, "\t\t\ttop: -10px;\n");
+    fprintf(out, "\t\t\tleft: 50%%;\n");
+    fprintf(out, "\t\t}\n");
+    fprintf(out, "\t\t#header>h1 {\n");
+    fprintf(out, "\t\t\tfont-family: Arial, \"Helvetica Neue\", Helvetica, sans-serif;\n");
+    fprintf(out, "\t\t\tfont-size: 44px;\n");
+    fprintf(out, "\t\t\tfont-weight: 200;\n");
+    fprintf(out, "\t\t\ttext-shadow: 4px 4px 5px #000;\n");
+    fprintf(out, "\t\t\tcolor: #eee;\n");
+    fprintf(out, "\t\t\tposition: absolute;\n");
+    fprintf(out, "\t\t\twidth: 400px;\n");
+    fprintf(out, "\t\t\tmargin-left: -80px;\n");
+    fprintf(out, "\t\t\ttop: 8px;\n");
+    fprintf(out, "\t\t\tleft: 50%%;\n");
+    fprintf(out, "\t\t}\n");
+    fprintf(out, "\t\tbody {\n");
+    fprintf(out, "\t\t\tfont-family: Consolas, monaco, monospace;\n");
+    fprintf(out, "\t\t\tfont-size: 14px;\n");
+    fprintf(out, "\t\t\tline-height: 20px;\n");
+    fprintf(out, "\t\t\tcolor: #eee;\n");
+    fprintf(out, "\t\t\theight: 100%%;\n");
+    fprintf(out, "\t\t\tmargin: 0;\n");
+    fprintf(out, "\t\t\toverflow: hidden;\n");
+    fprintf(out, "\t\t}\n");
+    fprintf(out, "\t\t#wrapper {\n");
+    fprintf(out, "\t\t\tbackground-color: rgba(0, 0, 0, 0.7);\n");
+    fprintf(out, "\t\t\tborder: 1px solid #446;\n");
+    fprintf(out, "\t\t\tbox-shadow: 0px 0px 10px #000;\n");
+    fprintf(out, "\t\t\tpadding: 8px 12px;\n\n");
+    fprintf(out, "\t\t\tdisplay: inline-block;\n");
+    fprintf(out, "\t\t\tposition: absolute;\n");
+    fprintf(out, "\t\t\ttop: 80px;\n");
+    fprintf(out, "\t\t\tbottom: 25px;\n");
+    fprintf(out, "\t\t\tleft: 50px;\n");
+    fprintf(out, "\t\t\tright: 50px;\n");
+    fprintf(out, "\t\t\toverflow: auto;\n");
+    fprintf(out, "\t\t}\n");
+    fprintf(out, "\t\tdetails>details {\n");
+    fprintf(out, "\t\t\tmargin-left: 22px;\n");
+    fprintf(out, "\t\t}\n");
+    fprintf(out, "\t\tdetails>summary:only-child::-webkit-details-marker {\n");
+    fprintf(out, "\t\t\tdisplay: none;\n");
+    fprintf(out, "\t\t}\n");
+    fprintf(out, "\t\t.var, .type, .val {\n");
+    fprintf(out, "\t\t\tdisplay: inline;\n");
+    fprintf(out, "\t\t}\n");
+    fprintf(out, "\t\t.var {\n");
+    fprintf(out, "\t\t}\n");
+    fprintf(out, "\t\t.type {\n");
+    fprintf(out, "\t\t\tcolor: #acf;\n");
+    fprintf(out, "\t\t\tmargin: 0 12px;\n");
+    fprintf(out, "\t\t}\n");
+    fprintf(out, "\t\t.val {\n");
+    fprintf(out, "\t\t\tcolor: #afa;\n");
+    fprintf(out, "\t\t\tbackground: #222;\n");
+    fprintf(out, "\t\t\ttext-align: right;\n");
+    fprintf(out, "\t\t}\n");
+    fprintf(out, "\t\t</style>\n");
+    fprintf(out, "\t</head>\n");
+    fprintf(out, "\t<body>\n");
+    fprintf(out, "\t\t<div id='header'>\n");
+    fprintf(out, "\t\t\t<img src='C:/Git/VulkanTools/layersvt/images/lunarg.png' />\n");
+    fprintf(out, "\t\t\t<h1>Vulkan Info</h1>\n");
+    fprintf(out, "\t\t</div>\n");
+    fprintf(out, "\t\t<div id='wrapper'>\n");
+//    fprintf(out, "            <details><summary>");
+}
+
+void printHtmlFooter(FILE *out) {
+    fprintf(out, "\t\t</div>\n");
+    fprintf(out, "\t</body>\n");
+    fprintf(out, "</html>");
 }
 
 // static void AppCreateInstance(struct AppInstance *inst, int argc, ...) {
@@ -1573,16 +1579,18 @@ static void AppGpuDumpProps(const struct AppGpu *gpu)
 // clang-format on
 
 static void AppDumpExtensions(const char *indent, const char *layer_name, const uint32_t extension_count,
-                              const VkExtensionProperties *extension_properties, FILE *out, const bool *html_output) {
+                              const VkExtensionProperties *extension_properties, FILE *out) {
     uint32_t i;
 
-    if (*html_output) fprintf(out, "            <details><summary>");
+    bool html_output = (out != stdout);
+
+    if (html_output) fprintf(out, "\t\t\t<details><summary>");
     if (layer_name && (strlen(layer_name) > 0)) {
         fprintf(out, "%s%s Extensions", indent, layer_name);
     } else {
         fprintf(out, "%sExtensions", indent);
     }
-    if (*html_output) {
+    if (html_output) {
         fprintf(out, "\tcount = <div class='val'>%d</div></summary>\n", extension_count);
     } else {
         fprintf(out, "\tcount = %d\n", extension_count);
@@ -1591,8 +1599,8 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
     for (i = 0; i < extension_count; i++) {
         VkExtensionProperties const *ext_prop = &extension_properties[i];
 
-        if (*html_output) {
-            fprintf(out, "                <details><summary>");
+        if (html_output) {
+            fprintf(out, "\t\t\t\t<details><summary>");
             fprintf(out, "<div class='type'>%-36s</div>: extension revision <div class='val'>%d", ext_prop->extensionName,
                     ext_prop->specVersion);
             fprintf(out, "</summary></details>\n");
@@ -1601,7 +1609,7 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
             fprintf(out, "%-36s: extension revision %2d\n", ext_prop->extensionName, ext_prop->specVersion);
         }
     }
-    if (*html_output) fprintf(out, "            </details>\n");
+    if (html_output) fprintf(out, "\t\t\t</details>\n");
 
     fflush(out);
 }
@@ -1699,7 +1707,7 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu) {
     fflush(stdout);
 }
 
-static void AppGpuDump(const struct AppGpu *gpu, FILE *out, const bool html_output) {
+static void AppGpuDump(const struct AppGpu *gpu, FILE *out) {
     uint32_t i;
 
     printf("\nDevice Properties and Extensions :\n");
@@ -1707,7 +1715,7 @@ static void AppGpuDump(const struct AppGpu *gpu, FILE *out, const bool html_outp
     printf("GPU%u\n", gpu->id);
     AppGpuDumpProps(gpu);
     printf("\n");
-    AppDumpExtensions("", "Device", gpu->device_extension_count, gpu->device_extensions, out, &html_output);
+    AppDumpExtensions("", "Device", gpu->device_extension_count, gpu->device_extensions, out);
     printf("\n");
     for (i = 0; i < gpu->queue_count; i++) {
         AppGpuDumpQueueProps(gpu, i);
@@ -1774,6 +1782,7 @@ int main(int argc, char **argv) {
 
     if (html_output) {
         printHtmlHeader(out);
+        fprintf(out, "\t\t\t<details><summary>");
     } else {
         printf("===========\n");
         printf("VULKAN INFO\n");
@@ -1781,8 +1790,8 @@ int main(int argc, char **argv) {
     }
     fprintf(out, "Vulkan API Version: ");
     if (html_output) {
-        fprintf(out, "<div class='val'>%d.%d.%d</div></summary>\n", vulkan_major, vulkan_minor, vulkan_patch);
-        fprintf(out, "            </details>\n            <br />\n");
+        fprintf(out, "<div class='val'>%d.%d.%d</div></summary></details>\n", vulkan_major, vulkan_minor, vulkan_patch);
+        fprintf(out, "\t\t\t<br />\n");
     } else {
         printf("%d.%d.%d\n\n", vulkan_major, vulkan_minor, vulkan_patch);
     }
@@ -1793,7 +1802,7 @@ int main(int argc, char **argv) {
         printf("\nInstance Extensions:\n");
         printf("====================\n");
     }
-    AppDumpExtensions("", "Instance", inst.global_extension_count, inst.global_extensions, out, &html_output);
+    AppDumpExtensions("", "Instance", inst.global_extension_count, inst.global_extensions, out);
 
     err = vkEnumeratePhysicalDevices(inst.instance, &gpu_count, NULL);
     if (err) ERR_EXIT(err);
@@ -1811,7 +1820,7 @@ int main(int argc, char **argv) {
 
     //---Layer-Device-Extensions---
     if (html_output) {
-        fprintf(out, "            <details><summary>Layers: count = <div class='val'>%d</div></summary>\n",
+        fprintf(out, "\t\t\t<details><summary>Layers: count = <div class='val'>%d</div></summary>\n",
                 inst.global_layer_count);
     } else {
         printf("Layers: count = %d\n", inst.global_layer_count);
@@ -1828,7 +1837,7 @@ int main(int argc, char **argv) {
         snprintf(layer_version, sizeof(layer_version), "%d", layer_prop->implementationVersion);
 
         if (html_output) {
-            fprintf(out, "               <details><summary>");
+            fprintf(out, "\t\t\t\t<details><summary>");
             fprintf(out, "<div class='type'>%s</div> (%s) Vulkan version <div class='val'>%s</div>, ", layer_prop->layerName,
                     (char *)layer_prop->description, spec_version);
             fprintf(out, "layer version <div class='val'>%s</div></summary>\n", layer_version);
@@ -1838,8 +1847,7 @@ int main(int argc, char **argv) {
                    spec_version, layer_version);
         }
 
-        AppDumpExtensions("\t", "Layer", inst.global_layers[i].extension_count, inst.global_layers[i].extension_properties, out,
-                          &html_output);
+        AppDumpExtensions("\t", "Layer", inst.global_layers[i].extension_count, inst.global_layers[i].extension_properties, out);
 
         char *layer_name = inst.global_layers[i].layer_properties.layerName;
         printf("\tDevices \tcount = %d\n", gpu_count);
@@ -1848,12 +1856,12 @@ int main(int argc, char **argv) {
             uint32_t count = 0;
             VkExtensionProperties *props;
             AppGetPhysicalDeviceLayerExtensions(&gpus[j], layer_name, &count, &props);
-            AppDumpExtensions("\t\t", "Layer-Device", count, props, out, &html_output);
+            AppDumpExtensions("\t\t", "Layer-Device", count, props, out);
             free(props);
         }
 
         if (html_output) {
-            fprintf(out, "            </details>\n");
+            fprintf(out, "\t\t\t</details>\n");
         } else {
             printf("\n");
         }
@@ -1927,7 +1935,7 @@ int main(int argc, char **argv) {
     //---------
 
     for (uint32_t i = 0; i < gpu_count; i++) {
-        AppGpuDump(&gpus[i], out, &html_output);
+        AppGpuDump(&gpus[i], out);
         printf("\n\n");
     }
 
@@ -1943,6 +1951,7 @@ int main(int argc, char **argv) {
 #endif
 
     if (html_output) {
+        printHtmlFooter(out);
         fclose(out);
     }
 
