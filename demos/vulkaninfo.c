@@ -1130,7 +1130,7 @@ static void AppDestroyXlibWindow(struct AppInstance *inst) {
 #if defined(VK_USE_PLATFORM_XCB_KHR)     || \
     defined(VK_USE_PLATFORM_XLIB_KHR)    || \
     defined(VK_USE_PLATFORM_WIN32_KHR)
-static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu){
+static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu, FILE *out){
     // Get the list of VkFormat's that are supported:
     VkResult U_ASSERT_ONLY err;
     uint32_t format_count = 0;
@@ -1142,18 +1142,35 @@ static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu){
         ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
     err = inst->vkGetPhysicalDeviceSurfaceFormatsKHR(gpu->obj, inst->surface, &format_count, surf_formats);
     assert(!err);
-    printf("Formats:\t\tcount = %d\n", format_count);
+
+    bool html_output = (out != stdout);
+    if (html_output) {
+        fprintf(out, "\t\t\t\t<details><summary>Formats: count = <div class='val'>%d</div></summary>", format_count);
+        if (format_count > 0) {
+            fprintf(out, "\n");
+        } else {
+            fprintf(out, "<\details>");
+        }
+    } else {
+        printf("Formats:\t\tcount = %d\n", format_count);
+    }
 
     for (uint32_t i = 0; i < format_count; i++) {
-        printf("\t%s\n", VkFormatString(surf_formats[i].format));
+        if (html_output) {
+            fprintf(out, "\t\t\t\t\t<details><summary>%s</summary></details>\n", VkFormatString(surf_formats[i].format));
+        } else {
+            printf("\t%s\n", VkFormatString(surf_formats[i].format));
+        }
     }
-    fflush(stdout);
+    if (html_output && format_count > 0) fprintf(out, "\t\t\t\t</details>\n");
+
+    fflush(out);
 
     free(surf_formats);
     return format_count;
 }
 
-static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *gpu) {
+static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *gpu, FILE *out) {
     // Get the list of VkPresentMode's that are supported:
     VkResult U_ASSERT_ONLY err;
     uint32_t present_mode_count = 0;
@@ -1165,13 +1182,28 @@ static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *g
         ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
     err = inst->vkGetPhysicalDeviceSurfacePresentModesKHR(gpu->obj, inst->surface, &present_mode_count, surf_present_modes);
     assert(!err);
-    printf("Present Modes:\t\tcount = %d\n", present_mode_count);
+    bool html_output = (out != stdout);
+    if (html_output) {
+        fprintf(out, "\t\t\t\t<details><summary>Present Modes: count = <div class='val'>%d</div></summary>", present_mode_count);
+        if (present_mode_count > 0) {
+            fprintf(out, "\n");
+        } else {
+            fprintf(out, "<\details>");
+        }
+    } else {
+        printf("Present Modes:\t\tcount = %d\n", present_mode_count);
+    }
 
     for (uint32_t i = 0; i < present_mode_count; i++) {
-        printf("\t%s\n", VkPresentModeString(surf_present_modes[i]));
+        if (html_output) {
+            fprintf(out, "\t\t\t\t\t<details><summary>%s</summary></details>\n",VkPresentModeString(surf_present_modes[i]));
+        } else {
+            printf("\t%s\n", VkPresentModeString(surf_present_modes[i]));
+        }
     }
-    printf("\n");
-    fflush(stdout);
+    if (html_output && present_mode_count > 0) fprintf(out, "\t\t\t\t</details>\n");
+
+    fflush(out);
 
     free(surf_present_modes);
     return present_mode_count;
@@ -1183,7 +1215,7 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
         inst->vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gpu->obj, inst->surface, &inst->surface_capabilities);
 
         printf("\nVkSurfaceCapabilitiesKHR:\n");
-        printf("=========================\n\n");
+        printf("=========================\n");
         printf("\tminImageCount       = %u\n", inst->surface_capabilities.minImageCount);
         printf("\tmaxImageCount       = %u\n", inst->surface_capabilities.maxImageCount);
         printf("\tcurrentExtent:\n");
@@ -1586,7 +1618,11 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
 
     if (html_output) fprintf(out, "\t\t\t%s<details><summary>", indent);
     if (layer_name && (strlen(layer_name) > 0)) {
-        fprintf(out, "%s%s Extensions", indent, layer_name);
+        if (html_output){
+            fprintf(out, "%s Extensions", layer_name);
+        } else {
+            printf( "%s%s Extensions", indent, layer_name);
+        }
     } else {
         fprintf(out, "%sExtensions", indent);
     }
@@ -1596,7 +1632,7 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
             fprintf(out, "\n");
         }
     } else {
-        fprintf(out, "\tcount = %d\n", extension_count);
+        printf("\tcount = %d\n", extension_count);
     }
 
     for (i = 0; i < extension_count; i++) {
@@ -1608,18 +1644,17 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
                     ext_prop->specVersion);
             fprintf(out, "</summary></details>\n");
         } else {
-            fprintf(out, "%s\t", indent);
-            fprintf(out, "%-36s: extension revision %2d\n", ext_prop->extensionName, ext_prop->specVersion);
+            printf("%s\t", indent);
+            printf("%-36s: extension revision %2d\n", ext_prop->extensionName, ext_prop->specVersion);
         }
     }
     if (html_output) {
         if (extension_count > 0) {
             fprintf(out, "\t\t\t%s</details>\n", indent);
         } else {
-            fprintf(out, "!!!</details>\n");
+            fprintf(out, "</details>\n");
         }
     }
-
 
     fflush(out);
 }
@@ -1806,7 +1841,6 @@ int main(int argc, char **argv) {
         printf("%d.%d.%d\n\n", vulkan_major, vulkan_minor, vulkan_patch);
     }
 
-    //    AppCreateInstance(&inst, argc + 2, out, html_output, argv);
     AppCreateInstance(&inst);
     if (!html_output) {
         printf("\nInstance Extensions:\n");
@@ -1825,7 +1859,7 @@ int main(int argc, char **argv) {
     if (!gpus) ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
     for (uint32_t i = 0; i < gpu_count; i++) {
         AppGpuInit(&gpus[i], &inst, i, objs[i]);
-        if (!html_output) fprintf(out, "\n\n");
+        if (!html_output) printf("\n\n");
     }
 
     //---Layer-Device-Extensions---
@@ -1863,30 +1897,51 @@ int main(int argc, char **argv) {
         }
 
         char *layer_name = inst.global_layers[i].layer_properties.layerName;
-        printf("\tDevices \tcount = %d\n", gpu_count);
+
+        if (html_output) {
+            fprintf(out, "\t\t\t\t\t<details><summary>Devices count = <div class='val'>%d</div></summary>\n", gpu_count);
+        } else {
+            printf("\tDevices \tcount = %d\n", gpu_count);
+        }
         for (uint32_t j = 0; j < gpu_count; j++) {
-            printf("\t\tGPU id       : %u (%s)\n", j, gpus[j].props.deviceName);
+            if (html_output) {
+                fprintf(out, "\t\t\t\t\t\t<details><summary>");
+                fprintf(out, "GPU id : <div class='val'>%u</div> (%s)</summary></details>\n", j, gpus[j].props.deviceName);
+            } else {
+                printf("\t\tGPU id       : %u (%s)\n", j, gpus[j].props.deviceName);
+            }
             uint32_t count = 0;
             VkExtensionProperties *props;
             AppGetPhysicalDeviceLayerExtensions(&gpus[j], layer_name, &count, &props);
-            AppDumpExtensions("\t\t", "Layer-Device", count, props, out);
+            if (html_output) {
+                AppDumpExtensions("\t\t\t", "Layer-Device", count, props, out);
+            } else {
+                AppDumpExtensions("\t\t", "Layer-Device", count, props, out);
+            }
+            if (html_output) fprintf(out, "\t\t\t\t\t</details>\n");
             free(props);
         }
-        if (html_output) fprintf(out, "\t\t\t\t</details>\n");
+        if (html_output) {
+            fprintf(out, "\t\t\t\t</details>\n");
+        } else {
+            printf("\n");
+        }
     }
 
-    if (html_output) {
-        fprintf(out, "\t\t\t</details>\n");
-    } else {
-        printf("\n");
-    }
-    
-//    fflush(stdout);
+    if (html_output) fprintf(out, "\t\t\t</details>\n");
+
     fflush(out);
     //-----------------------------
 
-    printf("Presentable Surfaces:\n");
-    printf("=====================\n");
+    if (html_output) {
+        fprintf(out, "\t\t\t<details><summary>Presentable Surfaces</summary>");
+        if (gpu_count > 0) {
+            fprintf(out, "\n");
+        }
+    } else {
+        printf("Presentable Surfaces:\n");
+        printf("=====================\n");
+    }
     inst.width = 256;
     inst.height = 256;
     int format_count = 0;
@@ -1899,6 +1954,8 @@ int main(int argc, char **argv) {
         exit(1);
     }
 #endif
+
+    //TODO: Make sure this portion works for every platform!!!
 //--WIN32--
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     if (CheckExtensionEnabled(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, inst.inst_extensions, inst.inst_extensions_count)) {
@@ -1920,10 +1977,16 @@ int main(int argc, char **argv) {
         AppCreateXcbWindow(&inst);
         for (uint32_t i = 0; i < gpu_count; i++) {
             AppCreateXcbSurface(&inst);
-            printf("GPU id       : %u (%s)\n", i, gpus[i].props.deviceName);
-            printf("Surface type : %s\n", VK_KHR_XCB_SURFACE_EXTENSION_NAME);
-            format_count += AppDumpSurfaceFormats(&inst, &gpus[i]);
-            present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i]);
+            if (html_output) {
+                fprintf(out, "\t\t\t\t<details><summary>GPU id : <div class='val'>%u</div> (%s)</summary></details>\n", i,
+                        gpus[i].props.deviceName);
+                fprintf(out, "\t\t\t\t<details><summary>Surface type : %s</summary></details>\n", VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+            } else {
+                printf("GPU id       : %u (%s)\n", i, gpus[i].props.deviceName);
+                printf("Surface type : %s\n", VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+            }
+            format_count += AppDumpSurfaceFormats(&inst, &gpus[i], out);
+            present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i], out);
             AppDumpSurfaceCapabilities(&inst, &gpus[i]);
             AppDestroySurface(&inst);
         }
@@ -1945,6 +2008,12 @@ int main(int argc, char **argv) {
         AppDestroyXlibWindow(&inst);
     }
 #endif
+
+    if (html_output) {
+        fprintf(out, "\t\t\t</details>\n");
+    } else {
+        printf("\n");
+    }
     // TODO: Android / Wayland / MIR
     if (!format_count && !present_mode_count) printf("None found\n");
     //---------
