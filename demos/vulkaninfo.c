@@ -1584,14 +1584,17 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
 
     bool html_output = (out != stdout);
 
-    if (html_output) fprintf(out, "\t\t\t<details><summary>");
+    if (html_output) fprintf(out, "\t\t\t%s<details><summary>", indent);
     if (layer_name && (strlen(layer_name) > 0)) {
         fprintf(out, "%s%s Extensions", indent, layer_name);
     } else {
         fprintf(out, "%sExtensions", indent);
     }
     if (html_output) {
-        fprintf(out, "\tcount = <div class='val'>%d</div></summary>\n", extension_count);
+        fprintf(out, "\tcount = <div class='val'>%d</div></summary>", extension_count);
+        if (extension_count > 0) {
+            fprintf(out, "\n");
+        }
     } else {
         fprintf(out, "\tcount = %d\n", extension_count);
     }
@@ -1600,8 +1603,8 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
         VkExtensionProperties const *ext_prop = &extension_properties[i];
 
         if (html_output) {
-            fprintf(out, "\t\t\t\t<details><summary>");
-            fprintf(out, "<div class='type'>%-36s</div>: extension revision <div class='val'>%d", ext_prop->extensionName,
+            fprintf(out, "\t\t\t\t%s<details><summary>", indent);
+            fprintf(out, "<div class='type'>%s</div>: extension revision <div class='val'>%d</div>", ext_prop->extensionName,
                     ext_prop->specVersion);
             fprintf(out, "</summary></details>\n");
         } else {
@@ -1609,7 +1612,14 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
             fprintf(out, "%-36s: extension revision %2d\n", ext_prop->extensionName, ext_prop->specVersion);
         }
     }
-    if (html_output) fprintf(out, "\t\t\t</details>\n");
+    if (html_output) {
+        if (extension_count > 0) {
+            fprintf(out, "\t\t\t%s</details>\n", indent);
+        } else {
+            fprintf(out, "!!!</details>\n");
+        }
+    }
+
 
     fflush(out);
 }
@@ -1820,8 +1830,10 @@ int main(int argc, char **argv) {
 
     //---Layer-Device-Extensions---
     if (html_output) {
-        fprintf(out, "\t\t\t<details><summary>Layers: count = <div class='val'>%d</div></summary>\n",
-                inst.global_layer_count);
+        fprintf(out, "\t\t\t<details><summary>Layers: count = <div class='val'>%d</div></summary>", inst.global_layer_count);
+        if (inst.global_layer_count > 0) {
+            fprintf(out, "\n");
+        }
     } else {
         printf("Layers: count = %d\n", inst.global_layer_count);
         printf("=======\n");
@@ -1841,13 +1853,14 @@ int main(int argc, char **argv) {
             fprintf(out, "<div class='type'>%s</div> (%s) Vulkan version <div class='val'>%s</div>, ", layer_prop->layerName,
                     (char *)layer_prop->description, spec_version);
             fprintf(out, "layer version <div class='val'>%s</div></summary>\n", layer_version);
+            AppDumpExtensions("\t\t", "Layer", inst.global_layers[i].extension_count, inst.global_layers[i].extension_properties,
+                              out);
         } else {
-            printf("%s (%s) Vulkan version %s, layer version %s\n", layer_prop->layerName,
-                   (char *) layer_prop->description,
+            printf("%s (%s) Vulkan version %s, layer version %s\n", layer_prop->layerName, (char *) layer_prop->description,
                    spec_version, layer_version);
+            AppDumpExtensions("\t", "Layer", inst.global_layers[i].extension_count, inst.global_layers[i].extension_properties,
+                              out);
         }
-
-        AppDumpExtensions("\t", "Layer", inst.global_layers[i].extension_count, inst.global_layers[i].extension_properties, out);
 
         char *layer_name = inst.global_layers[i].layer_properties.layerName;
         printf("\tDevices \tcount = %d\n", gpu_count);
@@ -1859,13 +1872,15 @@ int main(int argc, char **argv) {
             AppDumpExtensions("\t\t", "Layer-Device", count, props, out);
             free(props);
         }
-
-        if (html_output) {
-            fprintf(out, "\t\t\t</details>\n");
-        } else {
-            printf("\n");
-        }
+        if (html_output) fprintf(out, "\t\t\t\t</details>\n");
     }
+
+    if (html_output) {
+        fprintf(out, "\t\t\t</details>\n");
+    } else {
+        printf("\n");
+    }
+    
 //    fflush(stdout);
     fflush(out);
     //-----------------------------
