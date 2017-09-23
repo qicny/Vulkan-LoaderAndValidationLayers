@@ -2126,18 +2126,24 @@ int main(int argc, char **argv) {
     }
 #endif
 
-    //TODO: Make sure this portion works for every platform!!!
 //--WIN32--
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     if (CheckExtensionEnabled(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, inst.inst_extensions, inst.inst_extensions_count)) {
         AppCreateWin32Window(&inst);
         for (uint32_t i = 0; i < gpu_count; i++) {
             AppCreateWin32Surface(&inst);
-            printf("GPU id       : %u (%s)\n", i, gpus[i].props.deviceName);
-            printf("Surface type : %s\n", VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-            format_count += AppDumpSurfaceFormats(&inst, &gpus[i]);
-            present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i]);
-            AppDumpSurfaceCapabilities(&inst, &gpus[i]);
+            if (html_output) {
+                fprintf(out, "\t\t\t\t<details><summary>GPU id : <div class='val'>%u</div> (%s)</summary></details>\n", i,
+                        gpus[i].props.deviceName);
+                fprintf(out, "\t\t\t\t<details><summary>Surface type : <div class='type'>%s</div></summary></details>\n",
+                        VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+            } else {
+                printf("GPU id       : %u (%s)\n", i, gpus[i].props.deviceName);
+                printf("Surface type : %s\n", VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+            }
+            format_count += AppDumpSurfaceFormats(&inst, &gpus[i], out);
+            present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i], out);
+            AppDumpSurfaceCapabilities(&inst, &gpus[i], out);
             AppDestroySurface(&inst);
         }
         AppDestroyWin32Window(&inst);
@@ -2170,11 +2176,18 @@ int main(int argc, char **argv) {
         AppCreateXlibWindow(&inst);
         for (uint32_t i = 0; i < gpu_count; i++) {
             AppCreateXlibSurface(&inst);
-            printf("GPU id       : %u (%s)\n", i, gpus[i].props.deviceName);
-            printf("Surface type : %s\n", VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-            format_count += AppDumpSurfaceFormats(&inst, &gpus[i]);
-            present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i]);
-            AppDumpSurfaceCapabilities(&inst, &gpus[i]);
+            if (html_output) {
+                fprintf(out, "\t\t\t\t<details><summary>GPU id : <div class='val'>%u</div> (%s)</summary></details>\n", i,
+                        gpus[i].props.deviceName);
+                fprintf(out, "\t\t\t\t<details><summary>Surface type : <div class='type'>%s</div></summary></details>\n",
+                        VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+            } else {
+                printf("GPU id       : %u (%s)\n", i, gpus[i].props.deviceName);
+                printf("Surface type : %s\n", VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+            }
+            format_count += AppDumpSurfaceFormats(&inst, &gpus[i], out);
+            present_mode_count += AppDumpSurfacePresentModes(&inst, &gpus[i], out);
+            AppDumpSurfaceCapabilities(&inst, &gpus[i], out);
             AppDestroySurface(&inst);
         }
         AppDestroyXlibWindow(&inst);
