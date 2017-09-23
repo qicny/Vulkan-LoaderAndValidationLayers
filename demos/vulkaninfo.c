@@ -1143,7 +1143,7 @@ static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu, F
     err = inst->vkGetPhysicalDeviceSurfaceFormatsKHR(gpu->obj, inst->surface, &format_count, surf_formats);
     assert(!err);
 
-    bool html_output = (out != stdout);
+    const bool html_output = (out != stdout);
     if (html_output) {
         fprintf(out, "\t\t\t\t<details><summary>Formats: count = <div class='val'>%d</div></summary>", format_count);
         if (format_count > 0) {
@@ -1183,7 +1183,8 @@ static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *g
         ERR_EXIT(VK_ERROR_OUT_OF_HOST_MEMORY);
     err = inst->vkGetPhysicalDeviceSurfacePresentModesKHR(gpu->obj, inst->surface, &present_mode_count, surf_present_modes);
     assert(!err);
-    bool html_output = (out != stdout);
+
+    const bool html_output = (out != stdout);
     if (html_output) {
         fprintf(out, "\t\t\t\t<details><summary>Present Modes: count = <div class='val'>%d</div></summary>", present_mode_count);
         if (present_mode_count > 0) {
@@ -1216,7 +1217,7 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
 
         inst->vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gpu->obj, inst->surface, &inst->surface_capabilities);
 
-        bool html_format = (out != stdout);
+        const bool html_format = (out != stdout);
         if (html_format) {
             fprintf(out, "\t\t\t\t<details><summary>VkSurfaceCapabilitiesKHR</summary>\n");
             fprintf(out, "\t\t\t\t\t<details><summary>minImageCount = <div class='val'>%u</div></summary></details>\n", inst->surface_capabilities.minImageCount);
@@ -1755,27 +1756,39 @@ static void AppDumpLimits(const VkPhysicalDeviceLimits *limits)
     printf("\t\tnonCoherentAtomSize                     = 0x%" PRIxLEAST64 "\n", limits->nonCoherentAtomSize                    );
 }
 
-static void AppGpuDumpProps(const struct AppGpu *gpu)
-{
+static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out) {
     const VkPhysicalDeviceProperties *props = &gpu->props;
     const uint32_t apiVersion=props->apiVersion;
     const uint32_t major = VK_VERSION_MAJOR(apiVersion);
     const uint32_t minor = VK_VERSION_MINOR(apiVersion);
     const uint32_t patch = VK_VERSION_PATCH(apiVersion);
 
-    printf("VkPhysicalDeviceProperties:\n");
-    printf("===========================\n");
-    printf("\tapiVersion     = 0x%" PRIxLEAST32 "  (%d.%d.%d)\n", apiVersion, major, minor, patch);
-    printf("\tdriverVersion  = %u (0x%" PRIxLEAST32 ")\n",props->driverVersion, props->driverVersion);
-    printf("\tvendorID       = 0x%04x\n",                 props->vendorID);
-    printf("\tdeviceID       = 0x%04x\n",                 props->deviceID);
-    printf("\tdeviceType     = %s\n",                     VkPhysicalDeviceTypeString(props->deviceType));
-    printf("\tdeviceName     = %s\n",                     props->deviceName);
+    const bool html_output = (out != stdout);
+    if (html_output) {
+        fprintf(out, "\t\t\t\t\t<details><summary>VkPhysicalDeviceProperties</summary>\n", gpu->id);
+        fprintf(out, "\t\t\t\t\t\t<details><summary>apiVersion = <div class='val'>0x%" PRIxLEAST32 "</div>  (<div class='val'>%d.%d.%d</div>)</summary></details>\n", apiVersion, major, minor, patch);
+        fprintf(out, "\t\t\t\t\t\t<details><summary>driverVersion = <div class='val'>%u</div> (<div class='val'>0x%" PRIxLEAST32 "</div>)</summary></details>\n", props->driverVersion, props->driverVersion);
+        fprintf(out, "\t\t\t\t\t\t<details><summary>vendorID = <div class='val'>0x%04x</div></summary></details>\n", props->vendorID);
+        fprintf(out, "\t\t\t\t\t\t<details><summary>deviceID = <div class='val'>0x%04x</div></summary></details>\n", props->deviceID);
+        fprintf(out, "\t\t\t\t\t\t<details><summary>deviceType = %s</summary></details>\n", VkPhysicalDeviceTypeString(props->deviceType));
+        fprintf(out, "\t\t\t\t\t\t<details><summary>deviceName = %s</summary></details>\n", props->deviceName);
+    } else {
+        printf("VkPhysicalDeviceProperties:\n");
+        printf("===========================\n");
+        printf("\tapiVersion     = 0x%" PRIxLEAST32 "  (%d.%d.%d)\n", apiVersion, major, minor, patch);
+        printf("\tdriverVersion  = %u (0x%" PRIxLEAST32 ")\n", props->driverVersion, props->driverVersion);
+        printf("\tvendorID       = 0x%04x\n", props->vendorID);
+        printf("\tdeviceID       = 0x%04x\n", props->deviceID);
+        printf("\tdeviceType     = %s\n", VkPhysicalDeviceTypeString(props->deviceType));
+        printf("\tdeviceName     = %s\n", props->deviceName);
+    }
 
     AppDumpLimits(&gpu->props.limits);
     AppDumpSparseProps(&gpu->props.sparseProperties);
 
-    fflush(stdout);
+    if (html_output) fprintf(out, "\t\t\t\t\t</details>\n");
+
+    fflush(out);
 }
 // clang-format on
 
@@ -1783,7 +1796,7 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
                               const VkExtensionProperties *extension_properties, FILE *out) {
     uint32_t i;
 
-    bool html_output = (out != stdout);
+    const bool html_output = (out != stdout);
 
     if (html_output) { fprintf(out, "\t\t\t%s<details><summary>", indent); }
     if (layer_name && (strlen(layer_name) > 0)) {
@@ -1924,10 +1937,17 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu) {
 static void AppGpuDump(const struct AppGpu *gpu, FILE *out) {
     uint32_t i;
 
-    printf("\nDevice Properties and Extensions :\n");
-    printf("==================================\n");
-    printf("GPU%u\n", gpu->id);
-    AppGpuDumpProps(gpu);
+    const bool html_output = (out != stdout);
+    if (html_output) {
+        fprintf(out, "\t\t\t<details><summary>Device Properties and Extensions</summary>\n");
+        fprintf(out, "\t\t\t\t<details><summary>GPU%u</summary>\n", gpu->id);
+    } else {
+        printf("\nDevice Properties and Extensions :\n");
+        printf("==================================\n");
+        printf("GPU%u\n", gpu->id);
+    }
+
+    AppGpuDumpProps(gpu, out);
     printf("\n");
     AppDumpExtensions("", "Device", gpu->device_extension_count, gpu->device_extensions, out);
     printf("\n");
@@ -1940,6 +1960,10 @@ static void AppGpuDump(const struct AppGpu *gpu, FILE *out) {
     AppGpuDumpFeatures(gpu);
     printf("\n");
     AppDevDump(&gpu->dev);
+    if (html_output) {
+        fprintf(out, "\t\t\t\t</details>\n");
+        fprintf(out, "\t\t\t</details>\n");
+    }
 }
 
 #ifdef _WIN32
@@ -1974,7 +1998,6 @@ int main(int argc, char **argv) {
     uint32_t gpu_count;
     VkResult err;
     struct AppInstance inst;
-    bool html_output = false;
     FILE *out = stdout;
 
 #ifdef _WIN32
@@ -1989,10 +2012,11 @@ int main(int argc, char **argv) {
             // TODO: Check if file exists, if so do something
             out = fopen("output.html", "w");
             // TODO: File error checking
-            html_output = true;
             continue;
         }
     }
+
+    const bool html_output = (out != stdout);
 
     if (html_output) {
         printHtmlHeader(out);
@@ -2075,7 +2099,7 @@ int main(int argc, char **argv) {
         for (uint32_t j = 0; j < gpu_count; j++) {
             if (html_output) {
                 fprintf(out, "\t\t\t\t\t\t<details><summary>");
-                fprintf(out, "GPU id : <div class='val'>%u</div> (%s)</summary></details>\n", j, gpus[j].props.deviceName);
+                fprintf(out, "GPU id: <div class='val'>%u</div> (%s)</summary></details>\n", j, gpus[j].props.deviceName);
             } else {
                 printf("\t\tGPU id       : %u (%s)\n", j, gpus[j].props.deviceName);
             }
@@ -2194,13 +2218,20 @@ int main(int argc, char **argv) {
     }
 #endif
 
+    // TODO: Android / Wayland / MIR
+    if (!format_count && !present_mode_count) {
+        if (html_output) {
+            fprintf(out, "\t\t\t\t<details><summary>None found</summary></details>\n");
+        } else {
+            printf("None found\n");
+        }
+    }
+
     if (html_output) {
         fprintf(out, "\t\t\t</details>\n");
     } else {
         printf("\n");
     }
-    // TODO: Android / Wayland / MIR
-    if (!format_count && !present_mode_count) printf("None found\n");
     //---------
 
     for (uint32_t i = 0; i < gpu_count; i++) {
@@ -2214,7 +2245,7 @@ int main(int argc, char **argv) {
 
     AppDestroyInstance(&inst);
 
-    fflush(stdout);
+    fflush(out);
 #ifdef _WIN32
     if (ConsoleIsExclusive()) Sleep(INFINITE);
 #endif
