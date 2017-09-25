@@ -2042,7 +2042,8 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
     const bool html_output = (out != stdout);
     if (html_output) {
         fprintf(out, "\t\t\t\t\t<details><summary>VkPhysicalDeviceMemoryProperties</summary>\n");
-        fprintf(out, "\t\t\t\t\t\t<details><summary>memoryTypeCount = <div class='val'>%u</div></summary></details>\n", props->memoryTypeCount);
+        fprintf(out, "\t\t\t\t\t\t<details><summary>memoryTypeCount = <div class='val'>%u</div></summary>", props->memoryTypeCount);
+        if (props->memoryTypeCount > 0) fprintf(out, "\n");
     } else {
         printf("VkPhysicalDeviceMemoryProperties:\n");
         printf("=================================\n");
@@ -2050,9 +2051,9 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
     }
     for (uint32_t i = 0; i < props->memoryTypeCount; i++) {
         if (html_output) {
-            fprintf(out, "\t\t\t\t\t\t<details><summary>memoryTypes[<div class='val'>%u</div>]</summary>\n", i);
-            fprintf(out, "\t\t\t\t\t\t\t<details><summary>heapIndex = <div class='val'>%u</div></summary></summary></details>\n", props->memoryTypes[i].heapIndex);
-            fprintf(out, "\t\t\t\t\t\t\t<details><summary>propertyFlags = <div class='val'>0x%" PRIxLEAST32 "</div></summary>\n", props->memoryTypes[i].propertyFlags);
+            fprintf(out, "\t\t\t\t\t\t\t<details><summary>memoryTypes[<div class='val'>%u</div>]</summary>\n", i);
+            fprintf(out, "\t\t\t\t\t\t\t\t<details><summary>heapIndex = <div class='val'>%u</div></summary></summary></details>\n", props->memoryTypes[i].heapIndex);
+            fprintf(out, "\t\t\t\t\t\t\t\t<details><summary>propertyFlags = <div class='val'>0x%" PRIxLEAST32 "</div></summary>\n", props->memoryTypes[i].propertyFlags);
         } else {
             printf("\tmemoryTypes[%u] :\n", i);
             printf("\t\theapIndex     = %u\n", props->memoryTypes[i].heapIndex);
@@ -2060,27 +2061,27 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
         }
 
         if (props->memoryTypes[i].propertyFlags == 0) {
-            if (html_output) fprintf(out, "\t\t\t\t\t\t\t</details>\n");
+            if (html_output) fprintf(out, "\t\t\t\t\t\t\t\t</details>\n");
         } else {
             // Print each named flag, if it is set
             VkFlags flags = props->memoryTypes[i].propertyFlags;
             if (html_output) {
                 if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
-                    fprintf(out, "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT</div></summary></details>\n");
+                    fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT</div></summary></details>\n");
                 }
                 if (flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-                    fprintf(out, "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT</div></summary></details>\n");
+                    fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT</div></summary></details>\n");
                 }
                 if (flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
-                    fprintf(out, "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_COHERENT_BIT</div></summary></details>\n");
+                    fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_COHERENT_BIT</div></summary></details>\n");
                 }
                 if (flags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
-                    fprintf(out, "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_CACHED_BIT</div></summary></details>\n");
+                    fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_CACHED_BIT</div></summary></details>\n");
                 }
                 if (flags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
-                    fprintf(out, "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT</div></summary></details>\n");
+                    fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT</div></summary></details>\n");
                 }
-                fprintf(out, "\t\t\t\t\t\t\t</details>\n");
+                fprintf(out, "\t\t\t\t\t\t\t\t</details>\n");
             } else {
                 if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)     printf("\t\t\tVK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT\n");
                 if (flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)     printf("\t\t\tVK_MEMORY_PROPERTY_HOST_VISIBLE_BIT\n");
@@ -2089,29 +2090,55 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
                 if (flags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) printf("\t\t\tVK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT\n");
             }
         }
-
-        if (html_output) {
-            fprintf(out, "\t\t\t\t\t\t</details>\n");
-        } else {
-            printf("\n");
-        }
+        if (html_output) fprintf(out, "\t\t\t\t\t\t\t</details>\n");
     }
 
-    printf("\tmemoryHeapCount       = %u\n", props->memoryHeapCount);
+    if (html_output) {
+        fprintf(out, "\t\t\t\t\t\t</details>\n");
+    } else {
+        printf("\n");
+    }
+
+    if (html_output) {
+        fprintf(out, "\t\t\t\t\t\t<details><summary>memoryHeapCount = <div class='val'>%u</div></summary>", props->memoryHeapCount);
+        if (props->memoryTypeCount > 0) fprintf(out, "\n");
+    } else {
+        printf("\tmemoryHeapCount       = %u\n", props->memoryHeapCount);
+    }
     for (uint32_t i = 0; i < props->memoryHeapCount; i++) {
-        printf("\tmemoryHeaps[%u] :\n", i);
         const VkDeviceSize memSize = props->memoryHeaps[i].size;
         char *mem_size_human_readable = HumanReadable((const size_t)memSize);
-        printf("\t\tsize          = " PRINTF_SIZE_T_SPECIFIER " (0x%" PRIxLEAST64 ") (%s)\n", (size_t)memSize, memSize,
-               mem_size_human_readable);
+
+        if (html_output) {
+            fprintf(out, "\t\t\t\t\t\t\t<details><summary>memoryHeaps[<div class='val'>%u</div>]</summary>\n", i);
+            fprintf(out, "\t\t\t\t\t\t\t\t<details><summary>size = <div class='val'>" PRINTF_SIZE_T_SPECIFIER "</div> (<div class='val'>0x%" PRIxLEAST64 "</div>) (<div class='val'>%s</div>)</summary></details>\n",
+                    (size_t)memSize, memSize, mem_size_human_readable);
+        } else {
+            printf("\tmemoryHeaps[%u] :\n", i);
+            printf("\t\tsize          = " PRINTF_SIZE_T_SPECIFIER " (0x%" PRIxLEAST64 ") (%s)\n", (size_t)memSize, memSize,
+                   mem_size_human_readable);
+        }
         free(mem_size_human_readable);
 
         VkMemoryHeapFlags heap_flags = props->memoryHeaps[i].flags;
-        printf("\t\tflags:\n\t\t\t");
-        printf((heap_flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) ? "VK_MEMORY_HEAP_DEVICE_LOCAL_BIT\n" : "None\n");
+        if (html_output) {
+            fprintf(out, "\t\t\t\t\t\t\t\t<details><summary>flags</summary>\n");
+            fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary>");
+            fprintf(out, (heap_flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) ? "<div class='type'>VK_MEMORY_HEAP_DEVICE_LOCAL_BIT</div>" : "None");
+            fprintf(out, "</summary></details>\n");
+            fprintf(out, "\t\t\t\t\t\t\t\t</details>\n");
+            fprintf(out, "\t\t\t\t\t\t\t</details>\n");
+        } else {
+            printf("\t\tflags:\n\t\t\t");
+            printf((heap_flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) ? "VK_MEMORY_HEAP_DEVICE_LOCAL_BIT\n" : "None\n");
+        }
     }
 
-    if (html_output) fprintf(out, "\t\t\t\t\t</details>\n");
+    if (html_output) {
+        fprintf(out, "\t\t\t\t\t\t</details>\n");
+        fprintf(out, "\t\t\t\t\t</details>\n");
+    }
+
     fflush(out);
 }
 
