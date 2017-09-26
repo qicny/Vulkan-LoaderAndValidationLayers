@@ -1498,8 +1498,7 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
 
 #endif
 
-static void AppDevDumpFormatProps(const struct AppDev *dev, VkFormat fmt)
-{
+static void AppDevDumpFormatProps(const struct AppDev *dev, VkFormat fmt, FILE *out) {
     const VkFormatProperties *props = &dev->format_props[fmt];
     struct {
         const char *name;
@@ -1513,44 +1512,87 @@ static void AppDevDumpFormatProps(const struct AppDev *dev, VkFormat fmt)
     features[2].name  = "bufferFeatures FormatFeatureFlags";
     features[2].flags = props->bufferFeatures;
 
-    printf("\nFORMAT_%s:", VkFormatString(fmt));
+    const bool html_output = (out != stdout);
+
+    if (html_output) {
+        fprintf(out, "\t\t\t\t\t\t<details><summary><div class='type'>FORMAT_%s</div></summary>\n", VkFormatString(fmt));
+    } else {
+        printf("\nFORMAT_%s:", VkFormatString(fmt));
+    }
+
     for (uint32_t i = 0; i < ARRAY_SIZE(features); i++) {
-        printf("\n\t%s:", features[i].name);
-        if (features[i].flags == 0) {
-            printf("\n\t\tNone");
+        if (html_output) {
+            fprintf(out, "\t\t\t\t\t\t\t<details><summary>%s</summary>\n", features[i].name);
+            if (features[i].flags == 0) {
+                fprintf(out, "\t\t\t\t\t\t\t\t<details><summary>None</summary></details>\n");
+            } else {
+                fprintf(out, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+                       ((features[i].flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)                  ? "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT</div></summary></details>\n"                  : ""),  //0x0001
+                       ((features[i].flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)                  ? "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT</div></summary></details>\n"                  : ""),  //0x0002
+                       ((features[i].flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)           ? "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT</div></summary></details>\n"           : ""),  //0x0004
+                       ((features[i].flags & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)           ? "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT</div></summary></details>\n"           : ""),  //0x0008
+                       ((features[i].flags & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)           ? "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT</div></summary></details>\n"           : ""),  //0x0010
+                       ((features[i].flags & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)    ? "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT</div></summary></details>\n"    : ""),  //0x0020
+                       ((features[i].flags & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT)                  ? "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT</div></summary></details>\n"                  : ""),  //0x0040
+                       ((features[i].flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)               ? "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT</div></summary></details>\n"               : ""),  //0x0080
+                       ((features[i].flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)         ? "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT</div></summary></details>\n"         : ""),  //0x0100
+                       ((features[i].flags & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)       ? "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT</div></summary></details>\n"       : ""),  //0x0200
+                       ((features[i].flags & VK_FORMAT_FEATURE_BLIT_SRC_BIT)                       ? "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_FORMAT_FEATURE_BLIT_SRC_BIT</div></summary></details>\n"                       : ""),  //0x0400
+                       ((features[i].flags & VK_FORMAT_FEATURE_BLIT_DST_BIT)                       ? "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_FORMAT_FEATURE_BLIT_DST_BIT</div></summary></details>\n"                       : ""),  //0x0800
+                       ((features[i].flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)    ? "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT</div></summary></details>\n"    : ""),  //0x1000
+                       ((features[i].flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG) ? "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG</div></summary></details>\n" : ""),  //0x2000
+                       ((features[i].flags & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR)               ? "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR</div></summary></details>\n"               : ""),  //0x4000
+                       ((features[i].flags & VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR)               ? "\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR</div></summary></details>\n"               : "")); //0x8000
+            }
+            fprintf(out, "\t\t\t\t\t\t\t</details>\n");
         } else {
-            printf("%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
-               ((features[i].flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)                  ? "\n\t\tVK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT"                  : ""),  //0x0001
-               ((features[i].flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)                  ? "\n\t\tVK_FORMAT_FEATURE_STORAGE_IMAGE_BIT"                  : ""),  //0x0002
-               ((features[i].flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)           ? "\n\t\tVK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT"           : ""),  //0x0004
-               ((features[i].flags & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)           ? "\n\t\tVK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT"           : ""),  //0x0008
-               ((features[i].flags & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)           ? "\n\t\tVK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT"           : ""),  //0x0010
-               ((features[i].flags & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)    ? "\n\t\tVK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT"    : ""),  //0x0020
-               ((features[i].flags & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT)                  ? "\n\t\tVK_FORMAT_FEATURE_VERTEX_BUFFER_BIT"                  : ""),  //0x0040
-               ((features[i].flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)               ? "\n\t\tVK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT"               : ""),  //0x0080
-               ((features[i].flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)         ? "\n\t\tVK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT"         : ""),  //0x0100
-               ((features[i].flags & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)       ? "\n\t\tVK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT"       : ""),  //0x0200
-               ((features[i].flags & VK_FORMAT_FEATURE_BLIT_SRC_BIT)                       ? "\n\t\tVK_FORMAT_FEATURE_BLIT_SRC_BIT"                       : ""),  //0x0400
-               ((features[i].flags & VK_FORMAT_FEATURE_BLIT_DST_BIT)                       ? "\n\t\tVK_FORMAT_FEATURE_BLIT_DST_BIT"                       : ""),  //0x0800
-               ((features[i].flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)    ? "\n\t\tVK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT"    : ""),  //0x1000
-               ((features[i].flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG) ? "\n\t\tVK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG" : ""),  //0x2000
-               ((features[i].flags & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR)               ? "\n\t\tVK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR"               : ""),  //0x4000
-               ((features[i].flags & VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR)               ? "\n\t\tVK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR"               : "")); //0x8000
+            printf("\n\t%s:", features[i].name);
+            if (features[i].flags == 0) {
+                printf("\n\t\tNone");
+            } else {
+                printf("%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+                       ((features[i].flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)                  ? "\n\t\tVK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT"                  : ""),  //0x0001
+                       ((features[i].flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)                  ? "\n\t\tVK_FORMAT_FEATURE_STORAGE_IMAGE_BIT"                  : ""),  //0x0002
+                       ((features[i].flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)           ? "\n\t\tVK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT"           : ""),  //0x0004
+                       ((features[i].flags & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)           ? "\n\t\tVK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT"           : ""),  //0x0008
+                       ((features[i].flags & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)           ? "\n\t\tVK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT"           : ""),  //0x0010
+                       ((features[i].flags & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)    ? "\n\t\tVK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT"    : ""),  //0x0020
+                       ((features[i].flags & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT)                  ? "\n\t\tVK_FORMAT_FEATURE_VERTEX_BUFFER_BIT"                  : ""),  //0x0040
+                       ((features[i].flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)               ? "\n\t\tVK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT"               : ""),  //0x0080
+                       ((features[i].flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)         ? "\n\t\tVK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT"         : ""),  //0x0100
+                       ((features[i].flags & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)       ? "\n\t\tVK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT"       : ""),  //0x0200
+                       ((features[i].flags & VK_FORMAT_FEATURE_BLIT_SRC_BIT)                       ? "\n\t\tVK_FORMAT_FEATURE_BLIT_SRC_BIT"                       : ""),  //0x0400
+                       ((features[i].flags & VK_FORMAT_FEATURE_BLIT_DST_BIT)                       ? "\n\t\tVK_FORMAT_FEATURE_BLIT_DST_BIT"                       : ""),  //0x0800
+                       ((features[i].flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)    ? "\n\t\tVK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT"    : ""),  //0x1000
+                       ((features[i].flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG) ? "\n\t\tVK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG" : ""),  //0x2000
+                       ((features[i].flags & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR)               ? "\n\t\tVK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR"               : ""),  //0x4000
+                       ((features[i].flags & VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR)               ? "\n\t\tVK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR"               : "")); //0x8000
+            }
         }
     }
-    printf("\n");
+
+    if (html_output) {
+        fprintf(out, "\t\t\t\t\t\t</details>\n");
+    } else {
+        printf("\n");
+    }
 }
 
-static void
-AppDevDump(const struct AppDev *dev)
-{
-    printf("Format Properties:\n");
-    printf("==================");
+static void AppDevDump(const struct AppDev *dev, FILE *out) {
+    const bool html_output = (out != stdout);
+    if (html_output) {
+        fprintf(out, "\t\t\t\t\t<details><summary>Format Properties</summary>\n");
+    } else {
+        printf("Format Properties:\n");
+        printf("==================");
+    }
     VkFormat fmt;
 
     for (fmt = 0; fmt < VK_FORMAT_RANGE_SIZE; fmt++) {
-        AppDevDumpFormatProps(dev, fmt);
+        AppDevDumpFormatProps(dev, fmt, out);
     }
+
+    if (html_output) fprintf(out, "\t\t\t\t\t</details>\n");
 }
 
 #ifdef _WIN32
@@ -1559,68 +1601,128 @@ AppDevDump(const struct AppDev *dev)
 #define PRINTF_SIZE_T_SPECIFIER    "%zu"
 #endif
 
-static void AppGpuDumpFeatures(const struct AppGpu *gpu)
-{
+static void AppGpuDumpFeatures(const struct AppGpu *gpu, FILE *out) {
     const VkPhysicalDeviceFeatures *features = &gpu->features;
 
-    printf("VkPhysicalDeviceFeatures:\n");
-    printf("=========================\n");
+    // If html output
+    if (out != stdout) {
+        fprintf(out, "\t\t\t\t\t<details><summary>VkPhysicalDeviceFeatures</summary>\n");
+        fprintf(out, "\t\t\t\t\t\t<details><summary>robustBufferAccess                      = <div class='val'>%u</div></summary></details>\n", features->robustBufferAccess                     );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>fullDrawIndexUint32                     = <div class='val'>%u</div></summary></details>\n", features->fullDrawIndexUint32                    );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>imageCubeArray                          = <div class='val'>%u</div></summary></details>\n", features->imageCubeArray                         );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>independentBlend                        = <div class='val'>%u</div></summary></details>\n", features->independentBlend                       );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>geometryShader                          = <div class='val'>%u</div></summary></details>\n", features->geometryShader                         );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>tessellationShader                      = <div class='val'>%u</div></summary></details>\n", features->tessellationShader                     );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>sampleRateShading                       = <div class='val'>%u</div></summary></details>\n", features->sampleRateShading                      );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>dualSrcBlend                            = <div class='val'>%u</div></summary></details>\n", features->dualSrcBlend                           );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>logicOp                                 = <div class='val'>%u</div></summary></details>\n", features->logicOp                                );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>multiDrawIndirect                       = <div class='val'>%u</div></summary></details>\n", features->multiDrawIndirect                      );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>drawIndirectFirstInstance               = <div class='val'>%u</div></summary></details>\n", features->drawIndirectFirstInstance              );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>depthClamp                              = <div class='val'>%u</div></summary></details>\n", features->depthClamp                             );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>depthBiasClamp                          = <div class='val'>%u</div></summary></details>\n", features->depthBiasClamp                         );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>fillModeNonSolid                        = <div class='val'>%u</div></summary></details>\n", features->fillModeNonSolid                       );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>depthBounds                             = <div class='val'>%u</div></summary></details>\n", features->depthBounds                            );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>wideLines                               = <div class='val'>%u</div></summary></details>\n", features->wideLines                              );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>largePoints                             = <div class='val'>%u</div></summary></details>\n", features->largePoints                            );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>alphaToOne                              = <div class='val'>%u</div></summary></details>\n", features->alphaToOne                             );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>multiViewport                           = <div class='val'>%u</div></summary></details>\n", features->multiViewport                          );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>samplerAnisotropy                       = <div class='val'>%u</div></summary></details>\n", features->samplerAnisotropy                      );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>textureCompressionETC2                  = <div class='val'>%u</div></summary></details>\n", features->textureCompressionETC2                 );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>textureCompressionASTC_LDR              = <div class='val'>%u</div></summary></details>\n", features->textureCompressionASTC_LDR             );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>textureCompressionBC                    = <div class='val'>%u</div></summary></details>\n", features->textureCompressionBC                   );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>occlusionQueryPrecise                   = <div class='val'>%u</div></summary></details>\n", features->occlusionQueryPrecise                  );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>pipelineStatisticsQuery                 = <div class='val'>%u</div></summary></details>\n", features->pipelineStatisticsQuery                );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>vertexPipelineStoresAndAtomics          = <div class='val'>%u</div></summary></details>\n", features->vertexPipelineStoresAndAtomics         );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>fragmentStoresAndAtomics                = <div class='val'>%u</div></summary></details>\n", features->fragmentStoresAndAtomics               );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>shaderTessellationAndGeometryPointSize  = <div class='val'>%u</div></summary></details>\n", features->shaderTessellationAndGeometryPointSize );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>shaderImageGatherExtended               = <div class='val'>%u</div></summary></details>\n", features->shaderImageGatherExtended              );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>shaderStorageImageExtendedFormats       = <div class='val'>%u</div></summary></details>\n", features->shaderStorageImageExtendedFormats      );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>shaderStorageImageMultisample           = <div class='val'>%u</div></summary></details>\n", features->shaderStorageImageMultisample          );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>shaderStorageImageReadWithoutFormat     = <div class='val'>%u</div></summary></details>\n", features->shaderStorageImageReadWithoutFormat    );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>shaderStorageImageWriteWithoutFormat    = <div class='val'>%u</div></summary></details>\n", features->shaderStorageImageWriteWithoutFormat   );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>shaderUniformBufferArrayDynamicIndexing = <div class='val'>%u</div></summary></details>\n", features->shaderUniformBufferArrayDynamicIndexing);
+        fprintf(out, "\t\t\t\t\t\t<details><summary>shaderSampledImageArrayDynamicIndexing  = <div class='val'>%u</div></summary></details>\n", features->shaderSampledImageArrayDynamicIndexing );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>shaderStorageBufferArrayDynamicIndexing = <div class='val'>%u</div></summary></details>\n", features->shaderStorageBufferArrayDynamicIndexing);
+        fprintf(out, "\t\t\t\t\t\t<details><summary>shaderStorageImageArrayDynamicIndexing  = <div class='val'>%u</div></summary></details>\n", features->shaderStorageImageArrayDynamicIndexing );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>shaderClipDistance                      = <div class='val'>%u</div></summary></details>\n", features->shaderClipDistance                     );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>shaderCullDistance                      = <div class='val'>%u</div></summary></details>\n", features->shaderCullDistance                     );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>shaderFloat64                           = <div class='val'>%u</div></summary></details>\n", features->shaderFloat64                          );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>shaderInt64                             = <div class='val'>%u</div></summary></details>\n", features->shaderInt64                            );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>shaderInt16                             = <div class='val'>%u</div></summary></details>\n", features->shaderInt16                            );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>shaderResourceResidency                 = <div class='val'>%u</div></summary></details>\n", features->shaderResourceResidency                );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>shaderResourceMinLod                    = <div class='val'>%u</div></summary></details>\n", features->shaderResourceMinLod                   );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>sparseBinding                           = <div class='val'>%u</div></summary></details>\n", features->sparseBinding                          );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>sparseResidencyBuffer                   = <div class='val'>%u</div></summary></details>\n", features->sparseResidencyBuffer                  );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>sparseResidencyImage2D                  = <div class='val'>%u</div></summary></details>\n", features->sparseResidencyImage2D                 );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>sparseResidencyImage3D                  = <div class='val'>%u</div></summary></details>\n", features->sparseResidencyImage3D                 );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>sparseResidency2Samples                 = <div class='val'>%u</div></summary></details>\n", features->sparseResidency2Samples                );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>sparseResidency4Samples                 = <div class='val'>%u</div></summary></details>\n", features->sparseResidency4Samples                );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>sparseResidency8Samples                 = <div class='val'>%u</div></summary></details>\n", features->sparseResidency8Samples                );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>sparseResidency16Samples                = <div class='val'>%u</div></summary></details>\n", features->sparseResidency16Samples               );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>sparseResidencyAliased                  = <div class='val'>%u</div></summary></details>\n", features->sparseResidencyAliased                 );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>variableMultisampleRate                 = <div class='val'>%u</div></summary></details>\n", features->variableMultisampleRate                );
+        fprintf(out, "\t\t\t\t\t\t<details><summary>inheritedQueries                        = <div class='val'>%u</div></summary></details>\n", features->inheritedQueries                       );
+        fprintf(out, "\t\t\t\t\t</details>\n");
+    } else {
+        printf("VkPhysicalDeviceFeatures:\n");
+        printf("=========================\n");
 
-    printf("\trobustBufferAccess                      = %u\n", features->robustBufferAccess                     );
-    printf("\tfullDrawIndexUint32                     = %u\n", features->fullDrawIndexUint32                    );
-    printf("\timageCubeArray                          = %u\n", features->imageCubeArray                         );
-    printf("\tindependentBlend                        = %u\n", features->independentBlend                       );
-    printf("\tgeometryShader                          = %u\n", features->geometryShader                         );
-    printf("\ttessellationShader                      = %u\n", features->tessellationShader                     );
-    printf("\tsampleRateShading                       = %u\n", features->sampleRateShading                      );
-    printf("\tdualSrcBlend                            = %u\n", features->dualSrcBlend                           );
-    printf("\tlogicOp                                 = %u\n", features->logicOp                                );
-    printf("\tmultiDrawIndirect                       = %u\n", features->multiDrawIndirect                      );
-    printf("\tdrawIndirectFirstInstance               = %u\n", features->drawIndirectFirstInstance              );
-    printf("\tdepthClamp                              = %u\n", features->depthClamp                             );
-    printf("\tdepthBiasClamp                          = %u\n", features->depthBiasClamp                         );
-    printf("\tfillModeNonSolid                        = %u\n", features->fillModeNonSolid                       );
-    printf("\tdepthBounds                             = %u\n", features->depthBounds                            );
-    printf("\twideLines                               = %u\n", features->wideLines                              );
-    printf("\tlargePoints                             = %u\n", features->largePoints                            );
-    printf("\talphaToOne                              = %u\n", features->alphaToOne                             );
-    printf("\tmultiViewport                           = %u\n", features->multiViewport                          );
-    printf("\tsamplerAnisotropy                       = %u\n", features->samplerAnisotropy                      );
-    printf("\ttextureCompressionETC2                  = %u\n", features->textureCompressionETC2                 );
-    printf("\ttextureCompressionASTC_LDR              = %u\n", features->textureCompressionASTC_LDR             );
-    printf("\ttextureCompressionBC                    = %u\n", features->textureCompressionBC                   );
-    printf("\tocclusionQueryPrecise                   = %u\n", features->occlusionQueryPrecise                  );
-    printf("\tpipelineStatisticsQuery                 = %u\n", features->pipelineStatisticsQuery                );
-    printf("\tvertexPipelineStoresAndAtomics          = %u\n", features->vertexPipelineStoresAndAtomics         );
-    printf("\tfragmentStoresAndAtomics                = %u\n", features->fragmentStoresAndAtomics               );
-    printf("\tshaderTessellationAndGeometryPointSize  = %u\n", features->shaderTessellationAndGeometryPointSize );
-    printf("\tshaderImageGatherExtended               = %u\n", features->shaderImageGatherExtended              );
-    printf("\tshaderStorageImageExtendedFormats       = %u\n", features->shaderStorageImageExtendedFormats      );
-    printf("\tshaderStorageImageMultisample           = %u\n", features->shaderStorageImageMultisample          );
-    printf("\tshaderStorageImageReadWithoutFormat     = %u\n", features->shaderStorageImageReadWithoutFormat    );
-    printf("\tshaderStorageImageWriteWithoutFormat    = %u\n", features->shaderStorageImageWriteWithoutFormat   );
-    printf("\tshaderUniformBufferArrayDynamicIndexing = %u\n", features->shaderUniformBufferArrayDynamicIndexing);
-    printf("\tshaderSampledImageArrayDynamicIndexing  = %u\n", features->shaderSampledImageArrayDynamicIndexing );
-    printf("\tshaderStorageBufferArrayDynamicIndexing = %u\n", features->shaderStorageBufferArrayDynamicIndexing);
-    printf("\tshaderStorageImageArrayDynamicIndexing  = %u\n", features->shaderStorageImageArrayDynamicIndexing );
-    printf("\tshaderClipDistance                      = %u\n", features->shaderClipDistance                     );
-    printf("\tshaderCullDistance                      = %u\n", features->shaderCullDistance                     );
-    printf("\tshaderFloat64                           = %u\n", features->shaderFloat64                          );
-    printf("\tshaderInt64                             = %u\n", features->shaderInt64                            );
-    printf("\tshaderInt16                             = %u\n", features->shaderInt16                            );
-    printf("\tshaderResourceResidency                 = %u\n", features->shaderResourceResidency                );
-    printf("\tshaderResourceMinLod                    = %u\n", features->shaderResourceMinLod                   );
-    printf("\tsparseBinding                           = %u\n", features->sparseBinding                          );
-    printf("\tsparseResidencyBuffer                   = %u\n", features->sparseResidencyBuffer                  );
-    printf("\tsparseResidencyImage2D                  = %u\n", features->sparseResidencyImage2D                 );
-    printf("\tsparseResidencyImage3D                  = %u\n", features->sparseResidencyImage3D                 );
-    printf("\tsparseResidency2Samples                 = %u\n", features->sparseResidency2Samples                );
-    printf("\tsparseResidency4Samples                 = %u\n", features->sparseResidency4Samples                );
-    printf("\tsparseResidency8Samples                 = %u\n", features->sparseResidency8Samples                );
-    printf("\tsparseResidency16Samples                = %u\n", features->sparseResidency16Samples               );
-    printf("\tsparseResidencyAliased                  = %u\n", features->sparseResidencyAliased                 );
-    printf("\tvariableMultisampleRate                 = %u\n", features->variableMultisampleRate                );
-    printf("\tinheritedQueries                        = %u\n", features->inheritedQueries                       );
+        printf("\trobustBufferAccess                      = %u\n", features->robustBufferAccess                     );
+        printf("\tfullDrawIndexUint32                     = %u\n", features->fullDrawIndexUint32                    );
+        printf("\timageCubeArray                          = %u\n", features->imageCubeArray                         );
+        printf("\tindependentBlend                        = %u\n", features->independentBlend                       );
+        printf("\tgeometryShader                          = %u\n", features->geometryShader                         );
+        printf("\ttessellationShader                      = %u\n", features->tessellationShader                     );
+        printf("\tsampleRateShading                       = %u\n", features->sampleRateShading                      );
+        printf("\tdualSrcBlend                            = %u\n", features->dualSrcBlend                           );
+        printf("\tlogicOp                                 = %u\n", features->logicOp                                );
+        printf("\tmultiDrawIndirect                       = %u\n", features->multiDrawIndirect                      );
+        printf("\tdrawIndirectFirstInstance               = %u\n", features->drawIndirectFirstInstance              );
+        printf("\tdepthClamp                              = %u\n", features->depthClamp                             );
+        printf("\tdepthBiasClamp                          = %u\n", features->depthBiasClamp                         );
+        printf("\tfillModeNonSolid                        = %u\n", features->fillModeNonSolid                       );
+        printf("\tdepthBounds                             = %u\n", features->depthBounds                            );
+        printf("\twideLines                               = %u\n", features->wideLines                              );
+        printf("\tlargePoints                             = %u\n", features->largePoints                            );
+        printf("\talphaToOne                              = %u\n", features->alphaToOne                             );
+        printf("\tmultiViewport                           = %u\n", features->multiViewport                          );
+        printf("\tsamplerAnisotropy                       = %u\n", features->samplerAnisotropy                      );
+        printf("\ttextureCompressionETC2                  = %u\n", features->textureCompressionETC2                 );
+        printf("\ttextureCompressionASTC_LDR              = %u\n", features->textureCompressionASTC_LDR             );
+        printf("\ttextureCompressionBC                    = %u\n", features->textureCompressionBC                   );
+        printf("\tocclusionQueryPrecise                   = %u\n", features->occlusionQueryPrecise                  );
+        printf("\tpipelineStatisticsQuery                 = %u\n", features->pipelineStatisticsQuery                );
+        printf("\tvertexPipelineStoresAndAtomics          = %u\n", features->vertexPipelineStoresAndAtomics         );
+        printf("\tfragmentStoresAndAtomics                = %u\n", features->fragmentStoresAndAtomics               );
+        printf("\tshaderTessellationAndGeometryPointSize  = %u\n", features->shaderTessellationAndGeometryPointSize );
+        printf("\tshaderImageGatherExtended               = %u\n", features->shaderImageGatherExtended              );
+        printf("\tshaderStorageImageExtendedFormats       = %u\n", features->shaderStorageImageExtendedFormats      );
+        printf("\tshaderStorageImageMultisample           = %u\n", features->shaderStorageImageMultisample          );
+        printf("\tshaderStorageImageReadWithoutFormat     = %u\n", features->shaderStorageImageReadWithoutFormat    );
+        printf("\tshaderStorageImageWriteWithoutFormat    = %u\n", features->shaderStorageImageWriteWithoutFormat   );
+        printf("\tshaderUniformBufferArrayDynamicIndexing = %u\n", features->shaderUniformBufferArrayDynamicIndexing);
+        printf("\tshaderSampledImageArrayDynamicIndexing  = %u\n", features->shaderSampledImageArrayDynamicIndexing );
+        printf("\tshaderStorageBufferArrayDynamicIndexing = %u\n", features->shaderStorageBufferArrayDynamicIndexing);
+        printf("\tshaderStorageImageArrayDynamicIndexing  = %u\n", features->shaderStorageImageArrayDynamicIndexing );
+        printf("\tshaderClipDistance                      = %u\n", features->shaderClipDistance                     );
+        printf("\tshaderCullDistance                      = %u\n", features->shaderCullDistance                     );
+        printf("\tshaderFloat64                           = %u\n", features->shaderFloat64                          );
+        printf("\tshaderInt64                             = %u\n", features->shaderInt64                            );
+        printf("\tshaderInt16                             = %u\n", features->shaderInt16                            );
+        printf("\tshaderResourceResidency                 = %u\n", features->shaderResourceResidency                );
+        printf("\tshaderResourceMinLod                    = %u\n", features->shaderResourceMinLod                   );
+        printf("\tsparseBinding                           = %u\n", features->sparseBinding                          );
+        printf("\tsparseResidencyBuffer                   = %u\n", features->sparseResidencyBuffer                  );
+        printf("\tsparseResidencyImage2D                  = %u\n", features->sparseResidencyImage2D                 );
+        printf("\tsparseResidencyImage3D                  = %u\n", features->sparseResidencyImage3D                 );
+        printf("\tsparseResidency2Samples                 = %u\n", features->sparseResidency2Samples                );
+        printf("\tsparseResidency4Samples                 = %u\n", features->sparseResidency4Samples                );
+        printf("\tsparseResidency8Samples                 = %u\n", features->sparseResidency8Samples                );
+        printf("\tsparseResidency16Samples                = %u\n", features->sparseResidency16Samples               );
+        printf("\tsparseResidencyAliased                  = %u\n", features->sparseResidencyAliased                 );
+        printf("\tvariableMultisampleRate                 = %u\n", features->variableMultisampleRate                );
+        printf("\tinheritedQueries                        = %u\n", features->inheritedQueries                       );
+    }
 }
 
 static void AppDumpSparseProps(const VkPhysicalDeviceSparseProperties *sparse_props, FILE *out) {
@@ -2168,10 +2270,10 @@ static void AppGpuDump(const struct AppGpu *gpu, FILE *out) {
         if (!html_output) printf("\n");
     }
     AppGpuDumpMemoryProps(gpu, out);
-    printf("\n");
-    AppGpuDumpFeatures(gpu);
-    printf("\n");
-    AppDevDump(&gpu->dev);
+    if (!html_output) printf("\n");
+    AppGpuDumpFeatures(gpu, out);
+    if (!html_output) printf("\n");
+    AppDevDump(&gpu->dev, out);
     if (html_output) {
         fprintf(out, "\t\t\t\t</details>\n");
         fprintf(out, "\t\t\t</details>\n");
