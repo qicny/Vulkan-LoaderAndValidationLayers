@@ -2292,7 +2292,7 @@ int main(int argc, char **argv) {
     vulkan_patch = VK_VERSION_PATCH(VK_HEADER_VERSION);
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--html") == 0) {
-            out = fopen("output.html", "w");
+            out = fopen("vulkaninfo.html", "w");
             html_output = true;
             continue;
         }
