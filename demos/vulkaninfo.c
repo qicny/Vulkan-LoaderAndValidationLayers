@@ -20,6 +20,7 @@
  * Author: Mark Lobodzinski <mark@lunarg.com>
  * Author: Rene Lindsay <rene@lunarg.com>
  * Author: Jeremy Kniager <jeremyk@lunarg.com>
+ * Author: Shannon McPherson <shannon@lunarg.com>
  */
 
 #ifdef __GNUC__
@@ -32,7 +33,6 @@
 
 #include <assert.h>
 #include <inttypes.h>
-#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -94,6 +94,8 @@ static int ConsoleIsExclusive(void) {
 
 #define MAX_QUEUE_TYPES 5
 #define APP_SHORT_NAME "vulkaninfo"
+
+static bool html_output;
 
 struct VkStructureHeader {
     VkStructureType sType;
@@ -719,7 +721,6 @@ void printHtmlHeader(FILE *out) {
     fprintf(out, "\t\t\t<h1>Vulkan Info</h1>\n");
     fprintf(out, "\t\t</div>\n");
     fprintf(out, "\t\t<div id='wrapper'>\n");
-//    fprintf(out, "            <details><summary>");
 }
 
 void printHtmlFooter(FILE *out) {
@@ -788,7 +789,7 @@ static void AppCreateInstance(struct AppInstance *inst) {
     VkDebugReportCallbackCreateInfoEXT dbg_info;
     memset(&dbg_info, 0, sizeof(dbg_info));
     dbg_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-    dbg_info.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
+    dbg_info.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
     dbg_info.pfnCallback = DbgCallback;
     inst_info.pNext = &dbg_info;
 
@@ -1143,13 +1144,12 @@ static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu, F
     err = inst->vkGetPhysicalDeviceSurfaceFormatsKHR(gpu->obj, inst->surface, &format_count, surf_formats);
     assert(!err);
 
-    const bool html_output = (out != stdout);
     if (html_output) {
         fprintf(out, "\t\t\t\t<details><summary>Formats: count = <div class='val'>%d</div></summary>", format_count);
         if (format_count > 0) {
             fprintf(out, "\n");
         } else {
-            fprintf(out, "<\details>");
+            fprintf(out, "</details>\n");
         }
     } else {
         printf("Formats:\t\tcount = %d\n", format_count);
@@ -1163,10 +1163,9 @@ static int AppDumpSurfaceFormats(struct AppInstance *inst, struct AppGpu *gpu, F
             printf("\t%s\n", VkFormatString(surf_formats[i].format));
         }
     }
-    if (html_output && format_count > 0) { fprintf(out, "\t\t\t\t</details>\n"); }
+    if (html_output && format_count > 0) fprintf(out, "\t\t\t\t</details>\n");
 
     fflush(out);
-
     free(surf_formats);
     return format_count;
 }
@@ -1184,13 +1183,12 @@ static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *g
     err = inst->vkGetPhysicalDeviceSurfacePresentModesKHR(gpu->obj, inst->surface, &present_mode_count, surf_present_modes);
     assert(!err);
 
-    const bool html_output = (out != stdout);
     if (html_output) {
         fprintf(out, "\t\t\t\t<details><summary>Present Modes: count = <div class='val'>%d</div></summary>", present_mode_count);
         if (present_mode_count > 0) {
             fprintf(out, "\n");
         } else {
-            fprintf(out, "<\details>");
+            fprintf(out, "</details>");
         }
     } else {
         printf("Present Modes:\t\tcount = %d\n", present_mode_count);
@@ -1204,21 +1202,18 @@ static int AppDumpSurfacePresentModes(struct AppInstance *inst, struct AppGpu *g
             printf("\t%s\n", VkPresentModeString(surf_present_modes[i]));
         }
     }
-    if (html_output && present_mode_count > 0) { fprintf(out, "\t\t\t\t</details>\n"); }
+    if (html_output && present_mode_count > 0) fprintf(out, "\t\t\t\t</details>\n");
 
     fflush(out);
-
     free(surf_present_modes);
     return present_mode_count;
 }
 
 static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *gpu, FILE *out) {
     if (CheckExtensionEnabled(VK_KHR_SURFACE_EXTENSION_NAME, gpu->inst->inst_extensions, gpu->inst->inst_extensions_count)) {
-
         inst->vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gpu->obj, inst->surface, &inst->surface_capabilities);
 
-        const bool html_format = (out != stdout);
-        if (html_format) {
+        if (html_output) {
             fprintf(out, "\t\t\t\t<details><summary>VkSurfaceCapabilitiesKHR</summary>\n");
             fprintf(out, "\t\t\t\t\t<details><summary>minImageCount = <div class='val'>%u</div></summary></details>\n", inst->surface_capabilities.minImageCount);
             fprintf(out, "\t\t\t\t\t<details><summary>maxImageCount = <div class='val'>%u</div></summary></details>\n", inst->surface_capabilities.maxImageCount);
@@ -1391,6 +1386,7 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
             if (inst->surface_capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) { printf("\t\tVK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT\n"); }
             if (inst->surface_capabilities.supportedUsageFlags & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) { printf("\t\tVK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT\n"); }
         }
+
         // Get additional surface capability information from vkGetPhysicalDeviceSurfaceCapabilities2EXT
         if (CheckExtensionEnabled(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME, gpu->inst->inst_extensions, gpu->inst->inst_extensions_count)) {
             memset(&inst->surface_capabilities2_ext, 0, sizeof(VkSurfaceCapabilities2EXT));
@@ -1399,7 +1395,7 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
 
             inst->vkGetPhysicalDeviceSurfaceCapabilities2EXT(gpu->obj, inst->surface, &inst->surface_capabilities2_ext);
 
-            if (html_format) {
+            if (html_output) {
                 fprintf(out, "\t\t\t\t<details><summary>VkSurfaceCapabilities2EXT</summary>\n");
                 fprintf(out, "\t\t\t\t\t<details><summary>supportedSurfaceCounters</summary>\n");
                 if (inst->surface_capabilities2_ext.supportedSurfaceCounters == 0) { fprintf(out, "\t\t\t\t\t\t<details><summary>None</summary></details>\n"); }
@@ -1440,7 +1436,7 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
             while (place) {
                 struct VkStructureHeader* work = (struct VkStructureHeader*) place;
                 if (work->sType == VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_KHR) {
-                    if (html_format) {
+                    if (html_output) {
                         fprintf(out, "\t\t\t\t<details><summary>VkSharedPresentSurfaceCapabilitiesKHR</summary>\n");
                         VkSharedPresentSurfaceCapabilitiesKHR* shared_surface_capabilities = (VkSharedPresentSurfaceCapabilitiesKHR*)place;
                         fprintf(out, "\t\t\t\t\t<details><summary>sharedPresentSupportedUsageFlags</summary>\n");
@@ -1486,13 +1482,11 @@ static void AppDumpSurfaceCapabilities(struct AppInstance *inst, struct AppGpu *
                         if (shared_surface_capabilities->sharedPresentSupportedUsageFlags & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) { printf("\t\tVK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT\n"); }
                         if (shared_surface_capabilities->sharedPresentSupportedUsageFlags & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) { printf("\t\tVK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT\n"); }
                     }
-
                 }
-
                 place = work->pNext;
             }
         }
-        if (html_format) { fprintf(out, "\t\t\t\t</details>\n"); }
+        if (html_output) { fprintf(out, "\t\t\t\t</details>\n"); }
     }
 }
 
@@ -1511,8 +1505,6 @@ static void AppDevDumpFormatProps(const struct AppDev *dev, VkFormat fmt, FILE *
     features[1].flags = props->optimalTilingFeatures;
     features[2].name  = "bufferFeatures FormatFeatureFlags";
     features[2].flags = props->bufferFeatures;
-
-    const bool html_output = (out != stdout);
 
     if (html_output) {
         fprintf(out, "\t\t\t\t\t\t<details><summary><div class='type'>FORMAT_%s</div></summary>\n", VkFormatString(fmt));
@@ -1579,7 +1571,6 @@ static void AppDevDumpFormatProps(const struct AppDev *dev, VkFormat fmt, FILE *
 }
 
 static void AppDevDump(const struct AppDev *dev, FILE *out) {
-    const bool html_output = (out != stdout);
     if (html_output) {
         fprintf(out, "\t\t\t\t\t<details><summary>Format Properties</summary>\n");
     } else {
@@ -1587,11 +1578,9 @@ static void AppDevDump(const struct AppDev *dev, FILE *out) {
         printf("==================");
     }
     VkFormat fmt;
-
     for (fmt = 0; fmt < VK_FORMAT_RANGE_SIZE; fmt++) {
         AppDevDumpFormatProps(dev, fmt, out);
     }
-
     if (html_output) fprintf(out, "\t\t\t\t\t</details>\n");
 }
 
@@ -1604,8 +1593,7 @@ static void AppDevDump(const struct AppDev *dev, FILE *out) {
 static void AppGpuDumpFeatures(const struct AppGpu *gpu, FILE *out) {
     const VkPhysicalDeviceFeatures *features = &gpu->features;
 
-    // If html output
-    if (out != stdout) {
+    if (html_output) {
         fprintf(out, "\t\t\t\t\t<details><summary>VkPhysicalDeviceFeatures</summary>\n");
         fprintf(out, "\t\t\t\t\t\t<details><summary>robustBufferAccess                      = <div class='val'>%u</div></summary></details>\n", features->robustBufferAccess                     );
         fprintf(out, "\t\t\t\t\t\t<details><summary>fullDrawIndexUint32                     = <div class='val'>%u</div></summary></details>\n", features->fullDrawIndexUint32                    );
@@ -1666,7 +1654,6 @@ static void AppGpuDumpFeatures(const struct AppGpu *gpu, FILE *out) {
     } else {
         printf("VkPhysicalDeviceFeatures:\n");
         printf("=========================\n");
-
         printf("\trobustBufferAccess                      = %u\n", features->robustBufferAccess                     );
         printf("\tfullDrawIndexUint32                     = %u\n", features->fullDrawIndexUint32                    );
         printf("\timageCubeArray                          = %u\n", features->imageCubeArray                         );
@@ -1726,7 +1713,7 @@ static void AppGpuDumpFeatures(const struct AppGpu *gpu, FILE *out) {
 }
 
 static void AppDumpSparseProps(const VkPhysicalDeviceSparseProperties *sparse_props, FILE *out) {
-    if (out != stdout) {
+    if (html_output) {
         fprintf(out, "\t\t\t\t\t<details><summary>VkPhysicalDeviceSparseProperties</summary>\n");
         fprintf(out, "\t\t\t\t\t\t<details><summary>residencyStandard2DBlockShape            = <div class='val'>%u</div></summary></details>\n", sparse_props->residencyStandard2DBlockShape           );
         fprintf(out, "\t\t\t\t\t\t<details><summary>residencyStandard2DMultisampleBlockShape = <div class='val'>%u</div></summary></details>\n", sparse_props->residencyStandard2DMultisampleBlockShape);
@@ -1746,7 +1733,7 @@ static void AppDumpSparseProps(const VkPhysicalDeviceSparseProperties *sparse_pr
 }
 
 static void AppDumpLimits(const VkPhysicalDeviceLimits *limits, FILE *out) {
-    if (out != stdout) {
+    if (html_output) {
         fprintf(out, "\t\t\t\t\t<details><summary>VkPhysicalDeviceLimits</summary>\n");
         fprintf(out, "\t\t\t\t\t\t<details><summary>maxImageDimension1D                     = <div class='val'>%u</div></summary></details>\n",                 limits->maxImageDimension1D                    );
         fprintf(out, "\t\t\t\t\t\t<details><summary>maxImageDimension2D                     = <div class='val'>%u</div></summary></details>\n",                 limits->maxImageDimension2D                    );
@@ -1990,9 +1977,8 @@ static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out) {
     const uint32_t minor = VK_VERSION_MINOR(apiVersion);
     const uint32_t patch = VK_VERSION_PATCH(apiVersion);
 
-    const bool html_output = (out != stdout);
     if (html_output) {
-        fprintf(out, "\t\t\t\t\t<details><summary>VkPhysicalDeviceProperties</summary>\n", gpu->id);
+        fprintf(out, "\t\t\t\t\t<details><summary>VkPhysicalDeviceProperties</summary>\n");
         fprintf(out, "\t\t\t\t\t\t<details><summary>apiVersion = <div class='val'>0x%" PRIxLEAST32 "</div>  (<div class='val'>%d.%d.%d</div>)</summary></details>\n", apiVersion, major, minor, patch);
         fprintf(out, "\t\t\t\t\t\t<details><summary>driverVersion = <div class='val'>%u</div> (<div class='val'>0x%" PRIxLEAST32 "</div>)</summary></details>\n", props->driverVersion, props->driverVersion);
         fprintf(out, "\t\t\t\t\t\t<details><summary>vendorID = <div class='val'>0x%04x</div></summary></details>\n", props->vendorID);
@@ -2009,7 +1995,6 @@ static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out) {
         printf("\tdeviceType     = %s\n", VkPhysicalDeviceTypeString(props->deviceType));
         printf("\tdeviceName     = %s\n", props->deviceName);
     }
-
     if (html_output) fprintf(out, "\t\t\t\t\t</details>\n");
 
     AppDumpLimits(&gpu->props.limits, out);
@@ -2023,11 +2008,9 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
                               const VkExtensionProperties *extension_properties, FILE *out) {
     uint32_t i;
 
-    const bool html_output = (out != stdout);
-
-    if (html_output) { fprintf(out, "\t\t\t%s<details><summary>", indent); }
+    if (html_output) fprintf(out, "\t\t\t%s<details><summary>", indent);
     if (layer_name && (strlen(layer_name) > 0)) {
-        if (html_output){
+        if (html_output) {
             fprintf(out, "%s Extensions", layer_name);
         } else {
             printf( "%s%s Extensions", indent, layer_name);
@@ -2037,9 +2020,7 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
     }
     if (html_output) {
         fprintf(out, "\tcount = <div class='val'>%d</div></summary>", extension_count);
-        if (extension_count > 0) {
-            fprintf(out, "\n");
-        }
+        if (extension_count > 0) fprintf(out, "\n");
     } else {
         printf("\tcount = %d\n", extension_count);
     }
@@ -2070,7 +2051,6 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
 
 static void AppGpuDumpQueueProps(const struct AppGpu *gpu, uint32_t id, FILE *out) {
     const VkQueueFamilyProperties *props = &gpu->queue_props[id];
-    const html_output = out != stdout;
 
     if (html_output) {
         fprintf(out, "\t\t\t\t\t<details><summary>VkQueueFamilyProperties[<div class='val'>%d</div>]</summary>\n", id);
@@ -2141,7 +2121,6 @@ static char *HumanReadable(const size_t sz) {
 static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
     const VkPhysicalDeviceMemoryProperties *props = &gpu->memory_props;
 
-    const bool html_output = (out != stdout);
     if (html_output) {
         fprintf(out, "\t\t\t\t\t<details><summary>VkPhysicalDeviceMemoryProperties</summary>\n");
         fprintf(out, "\t\t\t\t\t\t<details><summary>memoryTypeCount = <div class='val'>%u</div></summary>", props->memoryTypeCount);
@@ -2168,28 +2147,18 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
             // Print each named flag, if it is set
             VkFlags flags = props->memoryTypes[i].propertyFlags;
             if (html_output) {
-                if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
-                    fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT</div></summary></details>\n");
-                }
-                if (flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-                    fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT</div></summary></details>\n");
-                }
-                if (flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
-                    fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_COHERENT_BIT</div></summary></details>\n");
-                }
-                if (flags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
-                    fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_CACHED_BIT</div></summary></details>\n");
-                }
-                if (flags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
-                    fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT</div></summary></details>\n");
-                }
+                if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) { fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT</div></summary></details>\n");  }
+                if (flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) { fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT</div></summary></details>\n");  }
+                if (flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) { fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_COHERENT_BIT</div></summary></details>\n"); }
+                if (flags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) { fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_HOST_CACHED_BIT</div></summary></details>\n"); }
+                if (flags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) { fprintf(out, "\t\t\t\t\t\t\t\t\t<details><summary><div class='type'>VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT</div></summary></details>\n"); }
                 fprintf(out, "\t\t\t\t\t\t\t\t</details>\n");
             } else {
-                if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)     printf("\t\t\tVK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT\n");
-                if (flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)     printf("\t\t\tVK_MEMORY_PROPERTY_HOST_VISIBLE_BIT\n");
-                if (flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)    printf("\t\t\tVK_MEMORY_PROPERTY_HOST_COHERENT_BIT\n");
-                if (flags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT)      printf("\t\t\tVK_MEMORY_PROPERTY_HOST_CACHED_BIT\n");
-                if (flags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) printf("\t\t\tVK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT\n");
+                if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) { printf("\t\t\tVK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT\n"); }
+                if (flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) { printf("\t\t\tVK_MEMORY_PROPERTY_HOST_VISIBLE_BIT\n"); }
+                if (flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) { printf("\t\t\tVK_MEMORY_PROPERTY_HOST_COHERENT_BIT\n"); }
+                if (flags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) { printf("\t\t\tVK_MEMORY_PROPERTY_HOST_CACHED_BIT\n"); }
+                if (flags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) { printf("\t\t\tVK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT\n"); }
             }
         }
         if (html_output) fprintf(out, "\t\t\t\t\t\t\t</details>\n");
@@ -2247,7 +2216,6 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
 static void AppGpuDump(const struct AppGpu *gpu, FILE *out) {
     uint32_t i;
 
-    const bool html_output = (out != stdout);
     if (html_output) {
         fprintf(out, "\t\t\t<details><summary>Device Properties and Extensions</summary>\n");
         fprintf(out, "\t\t\t\t<details><summary>GPU%u</summary>\n", gpu->id);
@@ -2263,8 +2231,9 @@ static void AppGpuDump(const struct AppGpu *gpu, FILE *out) {
     } else {
         printf("\n");
         AppDumpExtensions("", "Device", gpu->device_extension_count, gpu->device_extensions, out);
+        printf("\n");
     }
-    printf("\n");
+
     for (i = 0; i < gpu->queue_count; i++) {
         AppGpuDumpQueueProps(gpu, i, out);
         if (!html_output) printf("\n");
@@ -2323,14 +2292,11 @@ int main(int argc, char **argv) {
     vulkan_patch = VK_VERSION_PATCH(VK_HEADER_VERSION);
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--html") == 0) {
-            // TODO: Check if file exists, if so do something
             out = fopen("output.html", "w");
-            // TODO: File error checking
+            html_output = true;
             continue;
         }
     }
-
-    const bool html_output = (out != stdout);
 
     if (html_output) {
         printHtmlHeader(out);
@@ -2349,6 +2315,7 @@ int main(int argc, char **argv) {
     }
 
     AppCreateInstance(&inst);
+
     if (!html_output) {
         printf("\nInstance Extensions:\n");
         printf("====================\n");
