@@ -1514,7 +1514,7 @@ static void AppDevDumpFormatProps(const struct AppDev *dev, VkFormat fmt, FILE *
 
     for (uint32_t i = 0; i < ARRAY_SIZE(features); i++) {
         if (html_output) {
-            fprintf(out, "\t\t\t\t\t\t\t<details><summary>%s</summary>\n", features[i].name);
+            fprintf(out, "\t\t\t\t\t\t\t<details open><summary>%s</summary>\n", features[i].name);
             if (features[i].flags == 0) {
                 fprintf(out, "\t\t\t\t\t\t\t\t<details><summary>None</summary></details>\n");
             } else {
