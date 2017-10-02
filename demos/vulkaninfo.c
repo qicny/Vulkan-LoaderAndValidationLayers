@@ -2212,6 +2212,7 @@ static void AppGpuDumpMemoryProps(const struct AppGpu *gpu, FILE *out) {
 
     fflush(out);
 }
+// clang-format on
 
 static void AppGpuDump(const struct AppGpu *gpu, FILE *out) {
     uint32_t i;
