@@ -631,7 +631,9 @@ static void AppGetInstanceExtensions(struct AppInstance *inst) {
     AppGetGlobalLayerExtensions(NULL, &inst->global_extension_count, &inst->global_extensions);
 }
 
-void printHtmlHeader(FILE *out) {
+// Prints opening CSS and HTML code for html output file
+// Defines various div text styles
+void PrintHtmlHeader(FILE *out) {
     fprintf(out, "<!doctype html>\n");
     fprintf(out, "<html>\n");
     fprintf(out, "\t<head>\n");
@@ -723,7 +725,8 @@ void printHtmlHeader(FILE *out) {
     fprintf(out, "\t\t<div id='wrapper'>\n");
 }
 
-void printHtmlFooter(FILE *out) {
+// Prints closing HTML code for html output file
+void PrintHtmlFooter(FILE *out) {
     fprintf(out, "\t\t</div>\n");
     fprintf(out, "\t</body>\n");
     fprintf(out, "</html>");
@@ -2300,7 +2303,7 @@ int main(int argc, char **argv) {
     }
 
     if (html_output) {
-        printHtmlHeader(out);
+        PrintHtmlHeader(out);
         fprintf(out, "\t\t\t<details><summary>");
     } else {
         printf("===========\n");
@@ -2533,7 +2536,7 @@ int main(int argc, char **argv) {
 #endif
 
     if (html_output) {
-        printHtmlFooter(out);
+        PrintHtmlFooter(out);
         fclose(out);
     }
 

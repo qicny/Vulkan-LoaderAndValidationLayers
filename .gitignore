@@ -33,5 +33,3 @@ build-android/external
 *.creator.user
 *.files
 *.includes
-*.idea
-cmake-build-debug/*
