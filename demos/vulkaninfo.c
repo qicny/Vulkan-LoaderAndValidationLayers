@@ -779,12 +779,12 @@ static void AppCreateInstance(struct AppInstance *inst) {
     };
 
     VkInstanceCreateInfo inst_info = {.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-        .pNext = NULL,
-        .pApplicationInfo = &app_info,
-        .enabledLayerCount = 0,
-        .ppEnabledLayerNames = NULL,
-        .enabledExtensionCount = inst->inst_extensions_count,
-        .ppEnabledExtensionNames = inst->inst_extensions};
+                                      .pNext = NULL,
+                                      .pApplicationInfo = &app_info,
+                                      .enabledLayerCount = 0,
+                                      .ppEnabledLayerNames = NULL,
+                                      .enabledExtensionCount = inst->inst_extensions_count,
+                                      .ppEnabledExtensionNames = inst->inst_extensions};
 
     VkDebugReportCallbackCreateInfoEXT dbg_info;
     memset(&dbg_info, 0, sizeof(dbg_info));
@@ -2002,7 +2002,6 @@ static void AppGpuDumpProps(const struct AppGpu *gpu, FILE *out) {
 
     fflush(out);
 }
-// clang-format on
 
 static void AppDumpExtensions(const char *indent, const char *layer_name, const uint32_t extension_count,
                               const VkExtensionProperties *extension_properties, FILE *out) {
@@ -2013,7 +2012,7 @@ static void AppDumpExtensions(const char *indent, const char *layer_name, const 
         if (html_output) {
             fprintf(out, "%s Extensions", layer_name);
         } else {
-            printf( "%s%s Extensions", indent, layer_name);
+            printf("%s%s Extensions", indent, layer_name);
         }
     } else {
         fprintf(out, "%sExtensions", indent);
@@ -2505,7 +2504,7 @@ int main(int argc, char **argv) {
         if (html_output) {
             fprintf(out, "\t\t\t\t<details><summary>None found</summary></details>\n");
         } else {
-            printf("None found\n");
+            printf( "None found\n");
         }
     }
 
