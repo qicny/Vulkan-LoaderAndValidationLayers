@@ -27,6 +27,7 @@ from dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, 
 from helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
 from loader_extension_generator import LoaderExtensionOutputGenerator, LoaderExtensionGeneratorOptions
 from mock_icd_generator import MockICDGeneratorOptions, MockICDOutputGenerator
+from layer_factory_generator import LayerFactoryGeneratorOptions, LayerFactoryOutputGenerator
 
 # Simple timer functions
 startTime = None
@@ -444,6 +445,51 @@ def makeGenOpts(extensions = [], removeExtensions = [], protect = True, director
             apientryp         = 'VKAPI_PTR *',
             alignFuncParam    = 48,
             helper_file_type  = 'typemap_helper_header')
+        ]
+
+
+    # Options for Vulkan Layer Factory header
+    genOpts['layer_factory.h'] = [
+          LayerFactoryOutputGenerator,
+          LayerFactoryGeneratorOptions(
+            filename          = 'layer_factory.h',
+            directory         = directory,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = allVersions,
+            emitversions      = allVersions,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensions,
+            removeExtensions  = removeExtensions,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            protectFeature    = False,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            helper_file_type  = 'layer_factory_header')
+        ]
+
+    # Options for Vulkan Layer Factory source file
+    genOpts['layer_factory.cpp'] = [
+          LayerFactoryOutputGenerator,
+          LayerFactoryGeneratorOptions(
+            filename          = 'layer_factory.cpp',
+            directory         = directory,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = allVersions,
+            emitversions      = allVersions,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensions,
+            removeExtensions  = removeExtensions,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            protectFeature    = False,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            helper_file_type  = 'layer_factory_source')
         ]
 
     # Options for mock ICD header
