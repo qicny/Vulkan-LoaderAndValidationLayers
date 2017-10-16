@@ -177,7 +177,7 @@ class LayerFactoryOutputGenerator(OutputGenerator):
             for s in genOpts.prefixText:
                 write(s, file=self.outFile)
         if self.header:
-            write('#include "vk_layer.h"', file=self.outFile)            
+            write('#include "vk_layer.h"', file=self.outFile)
             write('#include <unordered_map>\n', file=self.outFile)
         else:
             write('#include "vk_layer_data.h"', file=self.outFile)
@@ -195,8 +195,8 @@ class LayerFactoryOutputGenerator(OutputGenerator):
             write('};', file=self.outFile)
             write('static unordered_map<void *, device_layer_data *> device_layer_data_map;', file=self.outFile)
             write('static unordered_map<void *, instance_layer_data *> instance_layer_data_map;', file=self.outFile)
-            # Initialize Enum Section
-            self.intercept_enums += 'typedef enum InterceptIdentifiers {\n'
+        # Initialize Enum Section
+        self.intercept_enums += 'typedef enum InterceptIdentifiers {\n'
     #
     def endFile(self):
         # Finish C++ namespace and multiple inclusion protection
@@ -211,6 +211,8 @@ class LayerFactoryOutputGenerator(OutputGenerator):
         write('} // namespace vulkan_layer_factory', file=self.outFile)
         if self.header:
             self.newline()
+            self.intercept_enums += '} InterceptIdentifiers;\n'
+            write(self.intercept_enums, file=self.outFile)
             write('#endif', file=self.outFile)
         # Finish processing in superclass
         OutputGenerator.endFile(self)
@@ -283,13 +285,11 @@ class LayerFactoryOutputGenerator(OutputGenerator):
             self.appendSection('command', '')
             self.appendSection('command', self.makeCDecls(cmdinfo.elem)[0])
             if (self.featureExtraProtect != None):
-                self.intercept_enums += '#ifdef %s\n' % self.featureExtraProtect
                 self.intercepts += [ '#ifdef %s' % self.featureExtraProtect ]
             self.intercept_enums += '    kPreCall%s,\n' % name[2:]
             self.intercept_enums += '    kPostCall%s,\n' % name[2:]
             self.intercepts += [ '    {"%s", (void*)%s},' % (name,name[2:]) ]
             if (self.featureExtraProtect != None):
-                self.intercept_enums += '#endif\n'
                 self.intercepts += [ '#endif' ]
             return
 
