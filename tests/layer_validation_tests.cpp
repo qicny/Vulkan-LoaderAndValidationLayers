@@ -10821,7 +10821,7 @@ TEST_F(VkLayerTest, RenderPassExcessiveNextSubpass) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, RenderPassEndedBeforeFinalSubpass) {
+TEST_F(VkLayerTest, RenderPassEndedBeforeFinalSubpass2) {
     TEST_DESCRIPTION(
         "Test that an error is produced when CmdEndRenderPass is "
         "called before the final subpass has been reached");
