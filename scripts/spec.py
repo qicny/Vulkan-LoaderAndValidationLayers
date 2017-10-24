@@ -154,18 +154,10 @@ class Specification:
         json_db_set = set()
         for vuid in self.json_db: # pull entries out and see which fields we're missing from error_db
             json_db_set.add(vuid)
-        for enum in self.error_db_dict:
+        for enum in list(self.error_db_dict.keys()):
             vuid_string = self.error_db_dict[enum]['vuid_string']
             if vuid_string not in self.json_db:
-                #print ("Full string for %s is:%s" % (enum, full_error_string))
-                print ("WARN: Couldn't find vuid_string in json db:%s" % (vuid_string))
-                self.json_missing = self.json_missing + 1
-                self.error_db_dict[enum]['ext'] = 'core'
-                # TODO: Currently GL843 tracks 2 VUs that are missing from json incorrectly
-                #  Fix will land in 1.0.51 spec. After that we should take some alternative
-                #  action here to indicate that VUs have gone away.
-                #  Can have a removed_enums set that we add to and report to user
-                #sys.exit()
+                del self.error_db_dict[enum]
             else:
                 json_db_set.remove(vuid_string)
                 self.error_db_dict[enum]['ext'] = self.json_db[vuid_string]['ext']
@@ -175,7 +167,6 @@ class Specification:
                     spec_link = "%s#%s" % (ext_url, vuid_string)
                 self.error_db_dict[enum]['error_msg'] = "%s'%s' (%s)" % (error_msg_prefix, self.json_db[vuid_string]['vu_txt'], spec_link)
                 print ("Updated error_db error_msg:%s" % (self.error_db_dict[enum]['error_msg']))
-        #sys.exit()
         print ("These json DB entries are not in error DB:")
         for extra_vuid in json_db_set:
             print ("\t%s" % (extra_vuid))
