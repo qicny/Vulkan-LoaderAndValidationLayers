@@ -1140,6 +1140,38 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                                         validation_error_map[VALIDATION_ERROR_10c00988]);
                     }
 
+                    has_dynamic_viewport = false;
+                    has_dynamic_scissor = false;
+                    if (pCreateInfos[i].pDynamicState != nullptr) {
+                        const auto &dynamic_state_info = *pCreateInfos[i].pDynamicState;
+                        for (uint32_t state_index = 0; state_index < dynamic_state_info.dynamicStateCount; ++state_index) {
+                            const auto &dynamic_state = dynamic_state_info.pDynamicStates[state_index];
+                            if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT) has_dynamic_viewport = true;
+                            if (dynamic_state == VK_DYNAMIC_STATE_SCISSOR) has_dynamic_scissor = true;
+                            if (pCreateInfos[i].pDynamicState->pDynamicStates[state_index] == VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV && !device_data->extensions.vk_nv_clip_space_w_scaling) {
+                                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    __LINE__, 0, LayerName,
+                                    "vkCreateGraphicsPipelines: if pCreateInfos[%d].pDynamicState->pDynamicStates "
+                                    "contains VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV, extension VK_NV_clip_space_w_scaling "
+                                    "must be enabled.", i);
+                            }
+                            if (pCreateInfos[i].pDynamicState->pDynamicStates[state_index] == VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT && !device_data->extensions.vk_ext_discard_rectangles) {
+                                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                  __LINE__, 0, LayerName,
+                                    "vkCreateGraphicsPipelines: if pCreateInfos[%d].pDynamicState->pDynamicStates "
+                                    "contains VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT, extension VK_EXT_discard_rectangles "
+                                    "must be enabled.", i);
+                            }
+                            if (pCreateInfos[i].pDynamicState->pDynamicStates[state_index] == VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT && !device_data->extensions.vk_ext_sample_locations) {
+                                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    __LINE__, 0, LayerName,
+                                    "vkCreateGraphicsPipelines: if pCreateInfos[%d].pDynamicState->pDynamicStates "
+                                    "contains VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, extension VK_EXT_sample_locations "
+                                    "must be enabled.", i);
+                            }
+                        }
+                    }
+
                     if (!has_dynamic_viewport && viewport_state.viewportCount > 0 && viewport_state.pViewports == nullptr) {
                         skip |= log_msg(
                             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT, VK_NULL_HANDLE,
