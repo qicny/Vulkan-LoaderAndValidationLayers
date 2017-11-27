@@ -698,16 +698,32 @@ int update_system_file(FILE* log, const char* name, const char* extension, const
     }
     
     // Remove any older version of the output file
-    if(remove(output_filename) == 0) {
+    if(DeleteFile(output_filename) == 0) {
         fprintf(log, "Removed file %s\n", output_filename);
     } else {
-        fprintf(log, "Did not remove file %s\n", output_filename);
+        DWORD err = GetLastError();
+        switch(err) {
+        case ERROR_FILE_NOT_FOUND:
+            fprintf(log, "Did not remove file %s - the file was not found\n", output_filename);
+            break;
+        case ERROR_ACCESS_DENIED:
+            fprintf(log, "Did not remove file %s - access was denied\n", output_filename);
+            free(latest_filename);
+            free(output_filename);
+            return 212;
+        default:
+            fprintf(log, "Did not remove file %s - error code %s\n", output_filename, err);
+            free(latest_filename);
+            free(output_filename);
+            return 213;
+        }
     }
     
     fprintf(log, "Attempting to copy file %s to %s\n", latest_filename, output_filename);
     if(CopyFile(latest_filename, output_filename, false) == 0) {
         free(latest_filename);
         free(output_filename);
+        fprintf(log, "Copy failed with error code %d\n", GetLastError());
         return 215;
     }
     
