@@ -107,7 +107,8 @@ VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice phy) {
         VkFormatProperties format_props;
         vkGetPhysicalDeviceFormatProperties(phy, ds_formats[i], &format_props);
 
-        if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+        if ((format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) &&
+            (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR)) {
             return ds_formats[i];
         }
     }
