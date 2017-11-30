@@ -1321,8 +1321,8 @@ void VkCommandBufferObj::ClearAllBuffers(const vector<VkImageObj *> &color_objs,
         depth_stencil_obj->Layout(VK_IMAGE_LAYOUT_UNDEFINED);
         depth_stencil_obj->SetLayout(this, subrange.aspectMask, clear_layout);
 
-        VkClearDepthStencilValue clear_value = {depth_clear_value, stencil_clear_value};
-        ClearDepthStencilImage(depth_stencil_obj->handle(), clear_layout, &clear_value, 1, &subrange);
+        //VkClearDepthStencilValue clear_value = {depth_clear_value, stencil_clear_value};
+        // ClearDepthStencilImage(depth_stencil_obj->handle(), clear_layout, &clear_value, 1, &subrange);
     }
 }
 
