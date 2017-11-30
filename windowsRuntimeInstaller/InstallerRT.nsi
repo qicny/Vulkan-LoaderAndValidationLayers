@@ -482,20 +482,10 @@ Section
         SetOutPath "$INSTDIR"
         Call DiagConfigLayersAndVulkanDLL
 
-        # The program failed, and we don't know why.
-        # Simply configure system to use our loader and vulkaninfo.
-        MessageBox MB_OK "Warning!$\n$\nConfigureRT program called by VulkanRT Installer failed with error $0. This may result in an incomplete installation.$\n$\nWill configure system with Vulkan $FileVersion." /SD IDOK
-        ${If} ${RunningX64}
-            Delete  $WINDIR\SysWow64\${APILOWER}-${VERSION_ABI_MAJOR}.dll
-            Delete  $WINDIR\SysWow64\${APILOWER}info.exe
-            CopyFiles /SILENT $WINDIR\SysWow64\${APILOWER}-$FileVersion.dll $WINDIR\SysWow64\${APILOWER}-${VERSION_ABI_MAJOR}.dll
-            CopyFiles /SILENT $WINDIR\SysWow64\${APILOWER}info-$FileVersion.exe $WINDIR\SysWow64\${APILOWER}info.exe
-        ${Endif}
-        Delete  $WINDIR\System32\${APILOWER}-${VERSION_ABI_MAJOR}.dll
-        Delete  $WINDIR\System32\${APILOWER}info.exe
-        CopyFiles /SILENT $WINDIR\System32\${APILOWER}-$FileVersion.dll $WINDIR\System32\${APILOWER}-${VERSION_ABI_MAJOR}.dll
-        CopyFiles /SILENT $WINDIR\System32\${APILOWER}info-$FileVersion.exe $WINDIR\System32\${APILOWER}info.exe
-        ClearErrors
+        # The program failed, so we'll modify the error code from it (so it doesn't
+        # conflict with this script's errors) and output the error
+        IntOp $1 $0 + 16384
+        Call CheckForError
     ${Endif}
     StrCpy $1 60
     Call CheckForError
