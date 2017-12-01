@@ -588,11 +588,11 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
     VkImageView *depth_attachment = nullptr;
     if (failcase_needs_depth) {
         m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-        ASSERT_TRUE(m_depth_stencil_fmt != VK_FORMAT_UNDEFINED);
-
-        m_depthStencil->Init(m_device, static_cast<uint32_t>(m_width), static_cast<uint32_t>(m_height), m_depth_stencil_fmt,
-                             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-        depth_attachment = m_depthStencil->BindInfo();
+        if (m_depth_stencil_fmt != VK_FORMAT_UNDEFINED) {
+            m_depthStencil->Init(m_device, static_cast<uint32_t>(m_width), static_cast<uint32_t>(m_height), m_depth_stencil_fmt,
+                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+            depth_attachment = m_depthStencil->BindInfo();
+        }
     }
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(1, depth_attachment));
