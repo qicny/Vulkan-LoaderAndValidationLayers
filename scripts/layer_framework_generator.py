@@ -507,7 +507,6 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         self.base_class += '        };\n'
         self.base_class += '\n'
         self.base_class += '        std::string layer_name = "VLLF";\n'
-        self.base_class += '        std::vector<InterceptIdentifiers> state_tracker_intercepts;\n'
         self.base_class += '\n'
         self.base_class += '        // Pre/post hook point declarations\n'
     #
