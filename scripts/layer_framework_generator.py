@@ -200,7 +200,6 @@ struct device_layer_data {
 
 static unordered_map<void *, device_layer_data *> device_layer_data_map;
 static unordered_map<void *, instance_layer_data *> instance_layer_data_map;
-static std::vector<std::vector<base_class *>> dispatch_intercepts;
 
 static const VkLayerProperties global_layer = {
     "VK_LAYER_LUNARG_layer_framework", VK_LAYER_API_VERSION, 1, "LunarG Layer Framework",
@@ -212,16 +211,6 @@ extern const std::unordered_map<std::string, void*> name_to_funcptr_map;
 
 
 // Manually written functions
-
-// Add intercept points for each of the state_tracker objects to the global list
-void InitializeDispatchIntercepts() {
-    dispatch_intercepts.resize(kMaxInterceptIdentifers);
-    for (auto state_tracker : global_state_tracker_list) {
-        for (auto intercept : state_tracker->state_tracker_intercepts) {
-            dispatch_intercepts[intercept].emplace_back(state_tracker);
-        }
-    }
-}
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
     assert(device);
@@ -292,7 +281,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
 
     // Init dispatch array and call registration functions
-    InitializeDispatchIntercepts();
     for (auto intercept : global_state_tracker_list) {
         intercept->PreCallCreateInstance(pCreateInfo, pAllocator, pInstance);
     }
