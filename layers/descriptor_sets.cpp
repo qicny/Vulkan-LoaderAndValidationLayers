@@ -747,7 +747,21 @@ void cvdescriptorset::DescriptorSet::BindCommandBuffer(GLOBAL_CB_NODE *cb_node,
         }
     }
 }
-
+void cvdescriptorset::DescriptorSet::UnboundBindingReqs(GLOBAL_CB_NODE *cb_state, const BindingReqMap &in_req, BindingReqMap &out_req) {
+    std::unordered_set<uint32_t> &bound = cb_bound_bindings_[cb_state];
+    if (bound.size() == GetBindingCount()) {
+        return; // All bindings are bound, out req is empty
+    }
+    for (const auto &binding_req_pair : in_req) {
+        auto binding = binding_req_pair.first;
+        // If a binding doesn't exist, or has already been bound, skip it
+        if (!p_layout_->HasBinding(binding) || (bound.find(binding) != bound.end())) {
+            continue;
+        }
+        out_req.emplace(binding_req_pair);
+        bound.insert(binding);
+    }
+}
 cvdescriptorset::SamplerDescriptor::SamplerDescriptor(const VkSampler *immut) : sampler_(VK_NULL_HANDLE), immutable_(false) {
     updated = false;
     descriptor_class = PlainSampler;

@@ -1225,11 +1225,22 @@ static void UpdateDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, cons
             uint32_t setIndex = set_binding_pair.first;
             // Pull the set node
             cvdescriptorset::DescriptorSet *descriptor_set = state.boundDescriptorSets[setIndex];
+
             if (!descriptor_set->IsPushDescriptor()) {
+                // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor binding
+                const auto *binding_req_map = &set_binding_pair.second;
+                std::unique_ptr<std::map<uint32_t, descriptor_req>> reduced_map;
+                const uint32_t kManyDescriptors = 64; // TODO base this number on measured data
+                if (descriptor_set->GetTotalDescriptorCount() > kManyDescriptors) {
+                    reduced_map.reset(new std::map<uint32_t, descriptor_req>());
+                    descriptor_set->UnboundBindingReqs(cb_state, *binding_req_map, *reduced_map);
+                    binding_req_map = reduced_map.get();
+                }
+
                 // Bind this set and its active descriptor resources to the command buffer
-                descriptor_set->BindCommandBuffer(cb_state, set_binding_pair.second);
+                descriptor_set->BindCommandBuffer(cb_state, *binding_req_map);
                 // For given active slots record updated images & buffers
-                descriptor_set->GetStorageUpdates(set_binding_pair.second, &cb_state->updateBuffers, &cb_state->updateImages);
+                descriptor_set->GetStorageUpdates(*binding_req_map, &cb_state->updateBuffers, &cb_state->updateImages);
             }
         }
     }

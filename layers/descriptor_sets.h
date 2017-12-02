@@ -323,6 +323,7 @@ void PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo *, const Vk
  */
 class DescriptorSet : public BASE_NODE {
    public:
+    typedef std::map<uint32_t, descriptor_req> BindingReqMap;
     DescriptorSet(const VkDescriptorSet, const VkDescriptorPool, const std::shared_ptr<DescriptorSetLayout const> &,
                   const core_validation::layer_data *);
     ~DescriptorSet();
@@ -371,8 +372,12 @@ class DescriptorSet : public BASE_NODE {
     std::unordered_set<GLOBAL_CB_NODE *> GetBoundCmdBuffers() const { return cb_bindings; }
     // Bind given cmd_buffer to this descriptor set
     void BindCommandBuffer(GLOBAL_CB_NODE *, const std::map<uint32_t, descriptor_req> &);
+    void UnboundBindingReqs(GLOBAL_CB_NODE *, const BindingReqMap &in_req, BindingReqMap &out_req);
     // If given cmd_buffer is in the cb_bindings set, remove it
-    void RemoveBoundCommandBuffer(GLOBAL_CB_NODE *cb_node) { cb_bindings.erase(cb_node); }
+    void RemoveBoundCommandBuffer(GLOBAL_CB_NODE *cb_node) {
+        cb_bindings.erase(cb_node);
+        cb_bound_bindings_.erase(cb_node);
+    }
     VkSampler const *GetImmutableSamplerPtrFromBinding(const uint32_t index) const {
         return p_layout_->GetImmutableSamplerPtrFromBinding(index);
     };
@@ -405,6 +410,7 @@ class DescriptorSet : public BASE_NODE {
     // Ptr to device data used for various data look-ups
     const core_validation::layer_data *device_data_;
     const VkPhysicalDeviceLimits limits_;
+    std::unordered_map<GLOBAL_CB_NODE *, std::unordered_set<uint32_t>> cb_bound_bindings_;
 };
 }
 #endif  // CORE_VALIDATION_DESCRIPTOR_SETS_H_
