@@ -294,6 +294,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
         &instance_data->dispatch_table, *pInstance, pCreateInfo->enabledExtensionCount, pCreateInfo->ppEnabledExtensionNames);
     instance_data->extensions.InitFromInstanceCreateInfo(pCreateInfo);
     layer_debug_actions(instance_data->report_data, instance_data->logging_callback, pAllocator, "lunarg_layer_framework");
+    vllf_report_data = instance_data->report_data;
 
     for (auto intercept : global_state_tracker_list) {
         intercept->PostCallCreateInstance(pCreateInfo, pAllocator, pInstance);
@@ -539,6 +540,27 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         self.base_class += '\n'
         self.base_class += '        std::string layer_name = "VLLF";\n'
         self.base_class += '\n'
+        self.base_class += '        bool Information(const std::string &message) {\n'
+        self.base_class += '            return log_msg(vllf_report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, 0, 0,\n'
+        self.base_class += '                           layer_name.c_str(), message.c_str());\n'
+        self.base_class += '        }\n'
+        self.base_class += '\n'
+        self.base_class += '        bool PerformanceWarning(const std::string &message) {\n'
+        self.base_class += '            return log_msg(vllf_report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,\n'
+        self.base_class += '                           0, 0, 0, layer_name.c_str(), message.c_str());\n'
+        self.base_class += '        }\n'
+        self.base_class += '\n'
+        self.base_class += '        bool Warning(const std::string &message) {\n'
+        self.base_class += '            return log_msg(vllf_report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, 0, 0,\n'
+        self.base_class += '                           layer_name.c_str(), message.c_str());\n'
+        self.base_class += '        }\n'
+        self.base_class += '\n'
+        self.base_class += '        bool Error(const std::string &message) {\n'
+        self.base_class += '            return log_msg(vllf_report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, 0, 0,\n'
+        self.base_class += '                           layer_name.c_str(), message.c_str());\n'
+        self.base_class += '        }\n'
+        self.base_class += '\n'
+
         self.base_class += '        // Pre/post hook point declarations\n'
     #
     def endFile(self):
