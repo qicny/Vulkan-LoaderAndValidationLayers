@@ -92,6 +92,8 @@ using core_validation::layer_data;
  *  global indices for the lowest binding#.
  */
 namespace cvdescriptorset {
+typedef std::map<uint32_t, descriptor_req> BindingReqMap;
+
 class DescriptorSetLayout {
    public:
     // Constructors and destructor
@@ -145,6 +147,7 @@ class DescriptorSetLayout {
     //  updated, verify that for any binding boundaries crossed, the update is consistent
     bool VerifyUpdateConsistency(uint32_t, uint32_t, uint32_t, const char *, const VkDescriptorSet, std::string *) const;
     bool IsPushDescriptor() const { return GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR; };
+    const std::vector<uint32_t> &GetDynamicBindings() const { return dynamic_bindings_; }
 
    private:
     VkDescriptorSetLayout layout_;
@@ -158,6 +161,7 @@ class DescriptorSetLayout {
     std::vector<safe_VkDescriptorSetLayoutBinding> bindings_;
     uint32_t descriptor_count_;  // total # descriptors in this layout
     uint32_t dynamic_descriptor_count_;
+    std::vector<uint32_t> dynamic_bindings_;
 };
 
 /*
@@ -323,7 +327,6 @@ void PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo *, const Vk
  */
 class DescriptorSet : public BASE_NODE {
    public:
-    typedef std::map<uint32_t, descriptor_req> BindingReqMap;
     DescriptorSet(const VkDescriptorSet, const VkDescriptorPool, const std::shared_ptr<DescriptorSetLayout const> &,
                   const core_validation::layer_data *);
     ~DescriptorSet();
@@ -372,7 +375,14 @@ class DescriptorSet : public BASE_NODE {
     std::unordered_set<GLOBAL_CB_NODE *> GetBoundCmdBuffers() const { return cb_bindings; }
     // Bind given cmd_buffer to this descriptor set
     void BindCommandBuffer(GLOBAL_CB_NODE *, const std::map<uint32_t, descriptor_req> &);
-    void UnboundBindingReqs(GLOBAL_CB_NODE *, const BindingReqMap &in_req, BindingReqMap &out_req);
+
+    // Track work that has been bound or validated to avoid duplicate work, important when large descriptor arrays
+    // are present
+    typedef std::unordered_set<uint32_t> BindingSet;
+    void FilterAndTrackBindingReqs(const BindingReqMap &in_map, BindingReqMap &out_map, BindingSet &set);
+    void FilterAndTrackBindingReqs(GLOBAL_CB_NODE *, const BindingReqMap &in_req, BindingReqMap &out_req);
+    void FilterAndTrackBindingReqs(GLOBAL_CB_NODE *, PIPELINE_STATE *, const BindingReqMap &in_req, BindingReqMap &out_req);
+    void ClearDynamicDescriptorValidation(GLOBAL_CB_NODE *);
     // If given cmd_buffer is in the cb_bindings set, remove it
     void RemoveBoundCommandBuffer(GLOBAL_CB_NODE *cb_node) {
         cb_bindings.erase(cb_node);
@@ -410,7 +420,21 @@ class DescriptorSet : public BASE_NODE {
     // Ptr to device data used for various data look-ups
     const core_validation::layer_data *device_data_;
     const VkPhysicalDeviceLimits limits_;
-    std::unordered_map<GLOBAL_CB_NODE *, std::unordered_set<uint32_t>> cb_bound_bindings_;
+    typedef std::unordered_map<GLOBAL_CB_NODE *, BindingSet> BoundBindings;
+    BoundBindings cb_bound_bindings_;
+    typedef std::unordered_map<GLOBAL_CB_NODE *, std::unordered_map<PIPELINE_STATE *, BindingSet>> ValidatedBindings;
+    ValidatedBindings cb_validated_bindings_;
+};
+// For the "bindless" style resource usage with many descriptors, need to optimize binding and validation
+class PrefilterBindRequestMap {
+   public:
+    static const uint32_t kManyDescriptors_ = 64;  // TODO base this number on measured data
+    std::unique_ptr<BindingReqMap> filtered_map_;
+    const BindingReqMap &orig_map_;
+
+    PrefilterBindRequestMap(DescriptorSet &ds, const BindingReqMap &in_map, GLOBAL_CB_NODE *cb_state);
+    PrefilterBindRequestMap(DescriptorSet &ds, const BindingReqMap &in_map, GLOBAL_CB_NODE *cb_state, PIPELINE_STATE *);
+    const BindingReqMap &Map() const { return (filtered_map_) ? *filtered_map_ : orig_map_; }
 };
 }
 #endif  // CORE_VALIDATION_DESCRIPTOR_SETS_H_

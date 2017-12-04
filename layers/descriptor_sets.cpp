@@ -35,7 +35,8 @@ cvdescriptorset::DescriptorSetLayout::DescriptorSetLayout(const VkDescriptorSetL
       flags_(p_create_info->flags),
       binding_count_(p_create_info->bindingCount),
       descriptor_count_(0),
-      dynamic_descriptor_count_(0) {
+      dynamic_descriptor_count_(0),
+      dynamic_bindings_(0) {
     // Dyn array indicies are ordered by binding # and array index of any array within the binding
     //  so we store up bindings w/ count in ordered map in order to create dyn array mappings below
     std::map<uint32_t, uint32_t> binding_to_dyn_count;
@@ -80,10 +81,12 @@ cvdescriptorset::DescriptorSetLayout::DescriptorSetLayout(const VkDescriptorSetL
         global_index += bindings_[i].descriptorCount ? 1 : 0;
     }
     // Now create dyn offset array mapping for any dynamic descriptors
+    dynamic_bindings_.reserve(binding_to_dyn_count.size());
     uint32_t dyn_array_idx = 0;
     for (const auto &bc_pair : binding_to_dyn_count) {
         binding_to_dynamic_array_idx_map_[bc_pair.first] = dyn_array_idx;
         dyn_array_idx += bc_pair.second;
+        dynamic_bindings_.push_back(bc_pair.first);
     }
 }
 
@@ -747,21 +750,55 @@ void cvdescriptorset::DescriptorSet::BindCommandBuffer(GLOBAL_CB_NODE *cb_node,
         }
     }
 }
-void cvdescriptorset::DescriptorSet::UnboundBindingReqs(GLOBAL_CB_NODE *cb_state, const BindingReqMap &in_req, BindingReqMap &out_req) {
-    std::unordered_set<uint32_t> &bound = cb_bound_bindings_[cb_state];
-    if (bound.size() == GetBindingCount()) {
+void cvdescriptorset::DescriptorSet::FilterAndTrackBindingReqs(const BindingReqMap &in_req, BindingReqMap &out_req,
+                                                               BindingSet &set) {
+    if (set.size() == GetBindingCount()) {
         return; // All bindings are bound, out req is empty
     }
     for (const auto &binding_req_pair : in_req) {
         auto binding = binding_req_pair.first;
         // If a binding doesn't exist, or has already been bound, skip it
-        if (!p_layout_->HasBinding(binding) || (bound.find(binding) != bound.end())) {
+        if (!p_layout_->HasBinding(binding) || (set.find(binding) != set.end())) {
             continue;
         }
         out_req.emplace(binding_req_pair);
-        bound.insert(binding);
+        set.insert(binding);
     }
 }
+
+void cvdescriptorset::DescriptorSet::FilterAndTrackBindingReqs(GLOBAL_CB_NODE *cb_state, const BindingReqMap &in_req,
+                                                               BindingReqMap &out_req) {
+    BindingSet &bound = cb_bound_bindings_[cb_state];
+    FilterAndTrackBindingReqs(in_req, out_req, bound);
+}
+void cvdescriptorset::DescriptorSet::FilterAndTrackBindingReqs(GLOBAL_CB_NODE *cb_state, PIPELINE_STATE *pipeline,
+                                                               const BindingReqMap &in_req, BindingReqMap &out_req) {
+    BindingSet &validated = cb_validated_bindings_[cb_state][pipeline];
+    FilterAndTrackBindingReqs(in_req, out_req, validated);
+}
+
+void cvdescriptorset::DescriptorSet::ClearDynamicDescriptorValidation(GLOBAL_CB_NODE *cb_state) {
+    // Early returns to short circuit need searches
+    if ((p_layout_->GetDynamicDescriptorCount() == 0) || (cb_validated_bindings_.size() == 0)) {
+        return;
+    }
+    // use find instead of [] so as to not *create* entries
+    auto validated_it = cb_validated_bindings_.find(cb_state);
+    if (validated_it != cb_validated_bindings_.end()) {
+        return;
+    }
+
+    const auto &dynamic_bindings = p_layout_->GetDynamicBindings();
+    for (auto &pipeline_validated_bindings : validated_it->second) {
+        BindingSet &validated_set = pipeline_validated_bindings.second;
+        if (validated_set.size()) {
+            for (uint32_t binding : dynamic_bindings) {
+                validated_set.erase(binding);
+            }
+        }
+    }
+}
+
 cvdescriptorset::SamplerDescriptor::SamplerDescriptor(const VkSampler *immut) : sampler_(VK_NULL_HANDLE), immutable_(false) {
     updated = false;
     descriptor_class = PlainSampler;
@@ -1758,5 +1795,22 @@ void cvdescriptorset::PerformAllocateDescriptorSets(const VkDescriptorSetAllocat
         pool_state->sets.insert(new_ds);
         new_ds->in_use.store(0);
         (*set_map)[descriptor_sets[i]] = new_ds;
+    }
+}
+
+cvdescriptorset::PrefilterBindRequestMap::PrefilterBindRequestMap(cvdescriptorset::DescriptorSet &ds, const BindingReqMap &in_map,
+                                                                  GLOBAL_CB_NODE *cb_state)
+    : filtered_map_(), orig_map_(in_map) {
+    if (ds.GetTotalDescriptorCount() > kManyDescriptors_) {
+        filtered_map_.reset(new std::map<uint32_t, descriptor_req>());
+        ds.FilterAndTrackBindingReqs(cb_state, orig_map_, *filtered_map_);
+    }
+}
+cvdescriptorset::PrefilterBindRequestMap::PrefilterBindRequestMap(cvdescriptorset::DescriptorSet &ds, const BindingReqMap &in_map,
+                                                                  GLOBAL_CB_NODE *cb_state, PIPELINE_STATE *pipeline)
+    : filtered_map_(), orig_map_(in_map) {
+    if (ds.GetTotalDescriptorCount() > kManyDescriptors_) {
+        filtered_map_.reset(new std::map<uint32_t, descriptor_req>());
+        ds.FilterAndTrackBindingReqs(cb_state, pipeline, orig_map_, *filtered_map_);
     }
 }
