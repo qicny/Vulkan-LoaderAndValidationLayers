@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerEnvironment>VK_LAYER_PATH=..\layers\Debug</LocalDebuggerEnvironment>
+    <LocalDebuggerEnvironment>VK_LAYER_PATH=c:\dev\xgl\vulkan-loaderandvalidationlayers\layers\Debug
+VK_LOADER_DEBUG=all</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommandArguments>--validate</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerEnvironment>VK_LAYER_PATH=..\layers\Release</LocalDebuggerEnvironment>
