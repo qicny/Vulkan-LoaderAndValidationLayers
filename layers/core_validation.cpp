@@ -5553,7 +5553,6 @@ static void PreCallRecordCmdBindDescriptorSets(layer_data *device_data, GLOBAL_C
     string error_string = "";
     uint32_t last_set_index = firstSet + setCount - 1;
     auto last_bound = &cb_state->lastBound[pipelineBindPoint];
-    PIPELINE_STATE *pipeline_state = last_bound->pipeline_state;
 
     if (last_set_index >= last_bound->boundDescriptorSets.size()) {
         last_bound->boundDescriptorSets.resize(last_set_index + 1);
