@@ -699,8 +699,9 @@ void VkImageObj::ImageMemoryBarrier(VkCommandBufferObj *cmd_buf, VkImageAspectFl
             VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
             VK_MEMORY_INPUT_COPY_BIT*/,
                                     VkImageLayout image_layout) {
+    // TODO: Mali device crashing with VK_REMAINING_MIP_LEVELS
     const VkImageSubresourceRange subresourceRange =
-        subresource_range(aspect, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS);
+        subresource_range(aspect, 0, /*VK_REMAINING_MIP_LEVELS*/ 1, 0, 1/*VK_REMAINING_ARRAY_LAYERS*/);
     VkImageMemoryBarrier barrier;
     barrier = image_memory_barrier(output_mask, input_mask, Layout(), image_layout, subresourceRange);
 
@@ -1300,7 +1301,8 @@ void VkCommandBufferObj::ClearAllBuffers(const vector<VkImageObj *> &color_objs,
     VkImageSubresourceRange subrange = {};
     // srRange.aspectMask to be set later
     subrange.baseMipLevel = 0;
-    subrange.levelCount = VK_REMAINING_MIP_LEVELS;
+    // TODO: Mali device crashing with VK_REMAINING_MIP_LEVELS
+    subrange.levelCount = 1;  // VK_REMAINING_MIP_LEVELS;
     subrange.baseArrayLayer = 0;
     subrange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 
