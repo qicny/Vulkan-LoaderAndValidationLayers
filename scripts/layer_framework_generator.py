@@ -542,22 +542,22 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         self.base_class += '\n'
         self.base_class += '        bool Information(const std::string &message) {\n'
         self.base_class += '            return log_msg(vllf_report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, 0, 0,\n'
-        self.base_class += '                           layer_name.c_str(), message.c_str());\n'
+        self.base_class += '                           layer_name.c_str(), "%s", message.c_str());\n'
         self.base_class += '        }\n'
         self.base_class += '\n'
         self.base_class += '        bool PerformanceWarning(const std::string &message) {\n'
         self.base_class += '            return log_msg(vllf_report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,\n'
-        self.base_class += '                           0, 0, 0, layer_name.c_str(), message.c_str());\n'
+        self.base_class += '                           0, 0, 0, layer_name.c_str(), "%s", message.c_str());\n'
         self.base_class += '        }\n'
         self.base_class += '\n'
         self.base_class += '        bool Warning(const std::string &message) {\n'
         self.base_class += '            return log_msg(vllf_report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, 0, 0,\n'
-        self.base_class += '                           layer_name.c_str(), message.c_str());\n'
+        self.base_class += '                           layer_name.c_str(),  "%s", message.c_str());\n'
         self.base_class += '        }\n'
         self.base_class += '\n'
         self.base_class += '        bool Error(const std::string &message) {\n'
         self.base_class += '            return log_msg(vllf_report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, 0, 0,\n'
-        self.base_class += '                           layer_name.c_str(), message.c_str());\n'
+        self.base_class += '                           layer_name.c_str(),  "%s", message.c_str());\n'
         self.base_class += '        }\n'
         self.base_class += '\n'
 
@@ -569,7 +569,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         if not self.header:
             # Record intercepted procedures
             write('// Map of all APIs to be intercepted by this layer', file=self.outFile)
-            write('static const std::unordered_map<std::string, void*> name_to_funcptr_map = {', file=self.outFile)
+            write('const std::unordered_map<std::string, void*> name_to_funcptr_map = {', file=self.outFile)
             write('\n'.join(self.intercepts), file=self.outFile)
             write('};\n', file=self.outFile)
             self.newline()
