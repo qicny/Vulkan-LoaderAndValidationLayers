@@ -6300,6 +6300,12 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     uint32_t max_storage_images = m_device->phy().properties().limits.maxPerStageDescriptorStorageImages;
     uint32_t max_samplers = m_device->phy().properties().limits.maxPerStageDescriptorSamplers;
     uint32_t max_combined = std::min(max_samplers, max_sampled_images);
+    printf("    max_uniform_buffers: %u\n", max_uniform_buffers);
+    printf("    max_storage_buffers: %u\n", max_storage_buffers);
+    printf("    max_sampled_images : %u\n", max_sampled_images);
+    printf("    max_storage_images : %u\n", max_storage_images);
+    printf("    max_samplers       : %u\n", max_samplers);
+    printf("    max_combined       : %u\n", max_combined);
 
     VkDescriptorSetLayoutBinding dslb = {};
     std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
@@ -6336,7 +6342,9 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0fe0023e);
     err = vkCreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vkDestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    if (VK_NULL_HANDLE != pipeline_layout) {
+        vkDestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    }
     pipeline_layout = VK_NULL_HANDLE;
     vkDestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
 
