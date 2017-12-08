@@ -866,6 +866,6 @@ inline VkCommandBufferAllocateInfo CommandBuffer::create_info(VkCommandPool cons
     return info;
 }
 
-};  // namespace vk_testing
+}  // namespace vk_testing
 
 #endif  // VKTESTBINDING_H
