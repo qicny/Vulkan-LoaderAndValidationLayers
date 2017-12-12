@@ -784,7 +784,7 @@ void cvdescriptorset::DescriptorSet::ClearDynamicDescriptorValidation(GLOBAL_CB_
     }
     // use find instead of [] so as to not *create* entries
     auto validated_it = cb_validated_bindings_.find(cb_state);
-    if (validated_it != cb_validated_bindings_.end()) {
+    if (validated_it == cb_validated_bindings_.end()) {
         return;
     }
 
