@@ -117,6 +117,9 @@ LOCAL_LDFLAGS   += -Wl,-Bsymbolic
 LOCAL_LDFLAGS   += -Wl,--exclude-libs,ALL
 include $(BUILD_SHARED_LIBRARY)
 
+# Pick up VLLF layers
+include $(LOCAL_PATH)/$(LAYER_DIR)/include/Android.mk
+
 include $(CLEAR_VARS)
 LOCAL_MODULE := VkLayerValidationTests
 LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \

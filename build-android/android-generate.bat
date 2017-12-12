@@ -20,6 +20,8 @@ if exist generated (
 mkdir generated\include generated\common
 
 cd generated/include
+py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml layer_framework.h
+py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml layer_framework.cpp
 py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml vk_safe_struct.h
 py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml vk_safe_struct.cpp
 py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml vk_struct_size_helper.h
@@ -34,6 +36,7 @@ py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml vk_layer_d
 py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml vk_extension_helper.h
 py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml object_tracker.cpp
 py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml vk_typemap_helper.h
-py -3 ../../../scripts/external_revision_generator.py ../../third_party/shaderc/third_party/spirv-tools SPIRV_TOOLS_COMMIT_ID spirv_tools_commit_id.h
+REM py -3 ../../../scripts/external_revision_generator.py ../../third_party/shaderc/third_party/spirv-tools SPIRV_TOOLS_COMMIT_ID spirv_tools_commit_id.h
+py -3 ../../../scripts/vllf_makefile_generator.py ../../../layers/state_trackers
 cd ../..
 
