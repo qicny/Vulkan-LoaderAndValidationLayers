@@ -561,7 +561,9 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         self.layer_factory += '                           layer_name.c_str(), "%s", message.c_str());\n'
         self.layer_factory += '        }\n'
         self.layer_factory += '\n'
-
+        self.layer_factory += '        virtual void PreCallApiFunction(const char *api_name) {};\n'
+        self.layer_factory += '        virtual void PostCallApiFunction(const char *api_name) {};\n'
+        self.layer_factory += '\n'
         self.layer_factory += '        // Pre/post hook point declarations\n'
     #
     def endFile(self):
@@ -650,7 +652,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         pass
     #
     # Customize Cdecl for layer factory base class
-    def BaseClassCdecl(self, elem):
+    def BaseClassCdecl(self, elem, name):
         raw = self.makeCDecls(elem)[1]
         # Change initial keyword
         result = raw.replace("typedef", "virtual")
@@ -669,6 +671,8 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         default_def = return_map[return_type]
         result = result.replace(';', default_def, 1)
         pre_call = result.replace("VKAPI_PTR *PFN_vk", "PreCall")
+        pre_call_function = '{ PreCallApiFunction("%s");' % name
+        pre_call = pre_call.replace("{", pre_call_function)
         post_call = pre_call.replace("PreCall", "PostCall")
         return '        %s\n        %s\n' % (pre_call, post_call)
     #
@@ -681,7 +685,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
                 self.intercepts += [ '#ifdef %s' % self.featureExtraProtect ]
                 self.layer_factory += '#ifdef %s\n' % self.featureExtraProtect
             # Update base class with virtual function declarations
-            self.layer_factory += self.BaseClassCdecl(cmdinfo.elem)
+            self.layer_factory += self.BaseClassCdecl(cmdinfo.elem, name)
             # Update function intercepts
             self.intercepts += [ '    {"%s", (void*)%s},' % (name,name[2:]) ]
             if (self.featureExtraProtect != None):
