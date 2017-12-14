@@ -560,7 +560,9 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         self.base_class += '                           layer_name.c_str(),  "%s", message.c_str());\n'
         self.base_class += '        }\n'
         self.base_class += '\n'
-
+        self.base_class += '        virtual void PreCallApiFunction(char * api_name) {};\n'
+        self.base_class += '        virtual void PostCallApiFunction(char * api_name) {};\n'
+        self.base_class += '\n'
         self.base_class += '        // Pre/post hook point declarations\n'
     #
     def endFile(self):
@@ -649,7 +651,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         pass
     #
     # Customize Cdecl for base class
-    def BaseClassCdecl(self, elem):
+    def BaseClassCdecl(self, elem, name):
         raw = self.makeCDecls(elem)[1]
         # Change initial keyword
         result = raw.replace("typedef", "virtual")
@@ -668,7 +670,11 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         default_def = return_map[return_type]
         result = result.replace(';', default_def, 1)
         pre_call = result.replace("VKAPI_PTR *PFN_vk", "PreCall")
+        pre_call_function = '{ PreCallApiFunction("%s"); ' % name
+        pre_call = pre_call.replace("{ ", pre_call_function)
         post_call = pre_call.replace("PreCall", "PostCall")
+        post_call_function = '{ PostCallApiFunction("%s"); ' % name
+        post_call = post_call.replace("{ ", post_call_function)
         return '        %s\n        %s\n' % (pre_call, post_call)
     #
     # Command generation
@@ -680,7 +686,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
                 self.intercepts += [ '#ifdef %s' % self.featureExtraProtect ]
                 self.base_class += '#ifdef %s\n' % self.featureExtraProtect
             # Update base class with virtual function declarations
-            self.base_class += self.BaseClassCdecl(cmdinfo.elem)
+            self.base_class += self.BaseClassCdecl(cmdinfo.elem, name)
             # Update function intercepts
             self.intercepts += [ '    {"%s", (void*)%s},' % (name,name[2:]) ]
             if (self.featureExtraProtect != None):
