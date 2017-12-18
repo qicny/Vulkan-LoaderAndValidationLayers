@@ -89,7 +89,7 @@ if __name__ == '__main__':
             contents += 'LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/include\n'
             contents += 'LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(LAYER_DIR)/include\n'
             contents += 'LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers\n'
-            contents += 'LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers/layer_factory/%s\n' % factory_layer
+            contents += 'LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layer_factory/%s\n' % factory_layer
             contents += 'LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/loader\n'
             contents += 'LOCAL_STATIC_LIBRARIES += layer_utils\n'
             contents += 'LOCAL_CPPFLAGS += -std=c++11 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable\n'

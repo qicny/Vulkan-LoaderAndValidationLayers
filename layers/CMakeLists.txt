@@ -219,5 +219,3 @@ add_vk_layer(parameter_validation parameter_validation.cpp parameter_validation_
 target_include_directories(VkLayer_core_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
 target_include_directories(VkLayer_core_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
 target_link_libraries(VkLayer_core_validation ${SPIRV_TOOLS_LIBRARIES})
-
-add_subdirectory(layer_factory)

@@ -394,6 +394,7 @@ endif()
 
 if(BUILD_LAYERS)
     add_subdirectory(layers)
+    add_subdirectory(layer_factory)
 endif()
 
 if(BUILD_DEMOS)
