@@ -38,6 +38,7 @@
 
 #include "icd-spv.h"
 #include "test_common.h"
+#include <vulkan/vk_standard_validation.h>
 #include "vk_layer_config.h"
 #include "vk_format_utils.h"
 #include "vk_validation_error_messages.h"
