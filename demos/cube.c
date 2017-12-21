@@ -2944,8 +2944,8 @@ static void demo_init_vk(struct demo *demo) {
     VkResult err;
     uint32_t instance_extension_count = 0;
     uint32_t instance_layer_count = 0;
-    uint32_t validation_layer_count = 0;
-    char **instance_validation_layers = NULL;
+    uint32_t validation_layer_count = VALIDATION_LAYER_COUNT;
+    char const *const *instance_validation_layers = vkval_standard_validation_array;
     demo->enabled_extension_count = 0;
     demo->enabled_layer_count = 0;
 
